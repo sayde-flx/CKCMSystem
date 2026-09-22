@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}User Management{% endblock %}
+{% block content %}
+<section class="page-head admin-page-head"><span class="eyebrow">USER MANAGEMENT</span><h1>Accounts &amp; Roles</h1><p>Manage CKCM accounts and permissions.</p></section>
+
+<section class="card panel admin-form-panel">
+  <div class="panel-title"><div><span class="eyebrow">ADD ACCOUNT</span><h2>New user</h2></div></div>
+  <form class="form-grid" method="post">
+    <input type="hidden" name="action" value="add">
+    <label>Username<input name="username" required></label>
+    <label>Password<input name="password" type="password" minlength="6" required></label>
+    <label>Role<select name="role"><option value="student">Student</option><option value="admin">Admin</option></select></label>
+    <div class="form-submit"><button class="btn primary" type="submit">Add user</button></div>
+  </form>
+  <p class="form-note">Usernames beginning with <b>admin_</b> are automatically treated as admin accounts.</p>
+</section>
+
+<section class="card panel">
+  <div class="panel-title"><div><span class="eyebrow">ACCOUNT DIRECTORY</span><h2>Registered users</h2></div><span class="panel-chip">{{ users|length }} total</span></div>
+  <div class="table-wrap"><table><thead><tr><th>Username</th><th>Role</th><th>Player profile</th><th>Commands</th></tr></thead><tbody>
+  {% for user in users %}
+  <tr>
+    <td><strong>{{ user.username }}</strong></td>
+    <td><span class="role-badge {{ 'admin' if user.role == 'admin' or user.username.lower().startswith('admin_') else 'student' }}">{{ 'Admin' if user.role == 'admin' or user.username.lower().startswith('admin_') else 'Student' }}</span></td>
+    <td>{{ 'Submitted' if system.player_for_owner(user.id) else 'No profile' }}</td>
+    <td>
+      {% if user.id != current_user.id %}
+      <form class="inline admin-inline-form" method="post"><input type="hidden" name="action" value="role"><input type="hidden" name="user_id" value="{{ user.id }}"><select name="role" aria-label="Role for {{ user.username }}"><option value="student" {{ 'selected' if user.role != 'admin' else '' }}>Student</option><option value="admin" {{ 'selected' if user.role == 'admin' else '' }}>Admin</option></select><button class="table-link button-link" type="submit">Save role</button></form>
+      <form class="inline" method="post"><input type="hidden" name="action" value="delete"><input type="hidden" name="user_id" value="{{ user.id }}"><button class="table-danger" type="submit">Remove</button></form>
+      {% else %}<span class="muted-label">Current account</span>{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}

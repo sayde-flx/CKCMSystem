@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}Players{% endblock %}
+{% block content %}
+<section class="page-head"><span class="eyebrow">Admin</span><h1>Players</h1></section>
+<section class="card panel"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Surname</th><th>Gender</th><th>Sport</th><th>Position</th><th>Course</th><th>Year</th><th>Action</th></tr></thead><tbody>{% for p in players %}<tr><td>{{ p.first_name }}</td><td>{{ p.surname }}</td><td>{{ p.gender }}</td><td>{{ sports[p.sport].name }}</td><td>{{ p.position }}</td><td>{{ p.course }}</td><td>{{ p.year }}</td><td><a class="table-link" href="{{ url_for('edit_player', player_id=p.id) }}">Edit</a><form class="inline" method="post" action="{{ url_for('delete_player', player_id=p.id) }}"><button class="table-danger" type="submit">Remove</button></form></td></tr>{% else %}<tr><td colspan="8" class="empty">No players</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

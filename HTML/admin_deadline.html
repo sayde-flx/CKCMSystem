@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}Submission date{% endblock %}
+{% block content %}
+<section class="page-head"><span class="eyebrow">Admin</span><h1>Submission date</h1></section>
+<section class="card panel"><p class="current-date">{{ system_deadline.strftime('%B %d, %Y') }}</p><form method="post" class="form"><label>Last submission date<input name="submission_date" type="date" value="{{ system_deadline.isoformat() }}" required></label><div class="actions"><button class="btn primary" type="submit">Save</button></div></form></section>
+{% endblock %}

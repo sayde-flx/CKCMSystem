@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}Player profile{% endblock %}
+{% block content %}
+<section class="page-head"><span class="eyebrow">Player profile</span><h1>Choose sport</h1></section>
+<div class="sports-grid">{% for key, info in sports.items() %}<a class="card sport-card" href="{{ url_for('new_player', sport=key) }}"><span>{{ info.name }}</span><b>Open</b></a>{% endfor %}</div>
+{% endblock %}

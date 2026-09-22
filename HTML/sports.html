@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Sports{% endblock %}
+{% block content %}
+<section class="sports-chooser-head">
+  <span class="eyebrow">CKCM SPORTS</span>
+  <h1>Choose a Sport</h1>
+  <p>Explore the player list by sport.</p>
+</section>
+
+<div class="sports-showcase">
+{% for key, info in sports.items() %}
+  <a class="card sport-choice" href="{{ url_for('sport_roster', sport=key) }}">
+    <span class="sport-number">0{{ loop.index }}</span>
+    <span class="sport-choice-name">{{ info.name }}</span>
+    <span class="sport-choice-action">View players <b>→</b></span>
+  </a>
+{% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<section class="admin-hero">
+  <div>
+    <span class="eyebrow">CONTROL CENTER</span>
+    <h1>Dashboard</h1>
+    <p>Overview of CKCM players, users, announcements, and submission status.</p>
+  </div>
+  <div class="admin-hero-badge"><span>ADMIN</span><strong>{{ current_user.username }}</strong></div>
+</section>
+
+<section class="kpi-grid">
+  <div class="kpi-card"><span>Registered users</span><strong>{{ system.users|length }}</strong><small>All accounts</small></div>
+  <div class="kpi-card"><span>Player profiles</span><strong>{{ system.players|length }}</strong><small>Submitted profiles</small></div>
+  <div class="kpi-card"><span>Announcements</span><strong>{{ system.announcements|length }}</strong><small>Published posts</small></div>
+  <div class="kpi-card"><span>Submission date</span><strong>{{ system_deadline.strftime('%b %d') }}</strong><small>{{ system_deadline.strftime('%Y') }}</small></div>
+</section>
+
+<section class="dashboard-grid">
+  <div class="card dashboard-panel chart-panel">
+    <div class="panel-title"><div><span class="eyebrow">VISUAL OVERVIEW</span><h2>Players by sport</h2></div><span class="panel-chip">Live</span></div>
+    {% set counts = namespace(total=0) %}
+    {% for key, info in sports.items() %}
+      {% set count = system.players_for_sport(key)|length %}
+      {% set counts.total = counts.total + count %}
+    {% endfor %}
+    <div class="bar-chart">
+      {% for key, info in sports.items() %}
+        {% set count = system.players_for_sport(key)|length %}
+        <div class="bar-row"><span>{{ info.name }}</span><div class="bar-track"><div class="bar-fill" style="width: {{ (count / (counts.total if counts.total else 1) * 100)|round(0) }}%"></div></div><b>{{ count }}</b></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card dashboard-panel activity-panel">
+    <div class="panel-title"><div><span class="eyebrow">RECENT ACTIVITY</span><h2>Latest records</h2></div></div>
+    {% if system.players %}
+      <div class="activity-list">
+        {% for player in system.players[-5:]|reverse %}
+          <div class="activity-item"><span class="activity-dot"></span><div><strong>{{ player.full_name }}</strong><small>{{ sports[player.sport].name }} · {{ player.gender }}</small></div></div>
+        {% endfor %}
+      </div>
+    {% else %}<div class="empty-box">No player submissions yet.</div>{% endif %}
+  </div>
+</section>
+
+<section class="card dashboard-panel shortcuts-panel">
+  <div class="panel-title"><div><span class="eyebrow">QUICK SHORTCUTS</span><h2>Admin commands</h2></div></div>
+  <div class="shortcut-grid">
+    <a href="{{ url_for('admin_players') }}"><b>Players</b><span>Manage submitted profiles →</span></a>
+    <a href="{{ url_for('admin_deadline') }}"><b>Submission date</b><span>Set the deadline →</span></a>
+    <a href="{{ url_for('admin_announcements') }}"><b>Announcements</b><span>Post and manage notices →</span></a>
+    <a href="{{ url_for('admin_users') }}"><b>User management</b><span>Manage accounts and roles →</span></a>
+    <a href="{{ url_for('export_player_report') }}"><b>Export report</b><span>Download player data as CSV →</span></a>
+  </div>
+</section>
+
+<section class="dashboard-grid bottom-grid">
+  <div class="card dashboard-panel alert-panel">
+    <div class="panel-title"><div><span class="eyebrow">SYSTEM ALERTS</span><h2>Attention</h2></div></div>
+    <div class="alert-list">
+      {% if system_deadline < today %}<div class="alert danger"><b>Submission date has passed.</b><span>Students can no longer submit new profiles.</span></div>
+      {% else %}<div class="alert"><b>Submission is open.</b><span>Deadline: {{ system_deadline.strftime('%B %d, %Y') }}</span></div>{% endif %}
+      {% if system.players|length == 0 %}<div class="alert"><b>No player profiles yet.</b><span>Submitted profiles will appear here and in Sports.</span></div>{% endif %}
+    </div>
+  </div>
+  <div class="card dashboard-panel distribution-panel">
+    <div class="panel-title"><div><span class="eyebrow">GENDER BREAKDOWN</span><h2>Player distribution</h2></div></div>
+    {% set male = system.players|selectattr('gender','equalto','Male')|list|length %}
+    {% set female = system.players|selectattr('gender','equalto','Female')|list|length %}
+    <div class="gender-stats"><div><strong>{{ male }}</strong><span>Male</span></div><div><strong>{{ female }}</strong><span>Female</span></div></div>
+  </div>
+</section>
+{% endblock %}

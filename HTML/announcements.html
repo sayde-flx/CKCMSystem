@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}Announcements{% endblock %}
+{% block content %}
+<section class="page-head"><span class="eyebrow">Notifications</span><h1>Announcements</h1></section>
+<div class="notice-list">{% for item in announcements %}<article class="card notice"><h2>{{ item.title }}</h2><p>{{ item.message }}</p><small>Posted by <strong>{{ item.author }}</strong></small>{% if current_user.role != 'admin' %}<div class="reactions"><form method="post" action="{{ url_for('react_to_announcement', announcement_id=item.id) }}"><input type="hidden" name="reaction" value="up"><button class="reaction" type="submit">THUMBS UP {{ item.thumbs_up }}</button></form><form method="post" action="{{ url_for('react_to_announcement', announcement_id=item.id) }}"><input type="hidden" name="reaction" value="down"><button class="reaction" type="submit">THUMBS DOWN {{ item.thumbs_down }}</button></form></div>{% endif %}</article>{% else %}<div class="card empty-box">No announcements</div>{% endfor %}</div>
+{% endblock %}

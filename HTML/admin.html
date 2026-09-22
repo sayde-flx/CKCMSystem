@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Admin Panel{% endblock %}
+{% block content %}
+<section class="admin-hero compact">
+  <div><span class="eyebrow">ADMIN PANEL</span><h1>Control Center</h1><p>Manage users, content, player data, deadlines, and reports.</p></div>
+</section>
+
+<div class="admin-command-grid">
+  <a class="admin-command" href="{{ url_for('admin_users') }}"><span class="command-icon">01</span><b>User Management</b><small>Add, remove, and change account roles.</small><em>Open →</em></a>
+  <a class="admin-command" href="{{ url_for('admin_announcements') }}"><span class="command-icon">02</span><b>Content Management</b><small>Create and manage announcements.</small><em>Open →</em></a>
+  <a class="admin-command" href="{{ url_for('admin_players') }}"><span class="command-icon">03</span><b>Data &amp; Operations</b><small>Review, edit, and remove player profiles.</small><em>Open →</em></a>
+  <a class="admin-command" href="{{ url_for('admin_deadline') }}"><span class="command-icon">04</span><b>Submission Control</b><small>Set the player submission deadline.</small><em>Open →</em></a>
+  <a class="admin-command" href="{{ url_for('dashboard') }}"><span class="command-icon">05</span><b>Reports &amp; Analytics</b><small>View live metrics and player distribution.</small><em>Open →</em></a>
+  <a class="admin-command" href="{{ url_for('export_player_report') }}"><span class="command-icon">06</span><b>Data Export</b><small>Download the current player report as CSV.</small><em>Export →</em></a>
+</div>
+
+<section class="card admin-summary">
+  <div><span class="eyebrow">SYSTEM SUMMARY</span><h2>CKCM at a glance</h2></div>
+  <div class="summary-stats"><span><b>{{ system.users|length }}</b> Users</span><span><b>{{ system.players|length }}</b> Players</span><span><b>{{ system.announcements|length }}</b> Announcements</span></div>
+</section>
+{% endblock %}

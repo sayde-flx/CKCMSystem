@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<section class="page-head"><span class="eyebrow">Settings</span><h1>Account</h1></section>
+<section class="card panel settings"><div><span>Username</span><strong>{{ current_user.username }}</strong></div><div><span>Account</span><strong>{{ 'Admin' if current_user.role == 'admin' else 'Student' }}</strong></div><a class="btn primary" href="{{ url_for('logout') }}">Log out</a></section>
+{% endblock %}

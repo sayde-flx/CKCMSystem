@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block title %}Announcements{% endblock %}
+{% block content %}
+<section class="page-head"><span class="eyebrow">Admin</span><h1>Announcements</h1></section>
+<section class="card panel"><form method="post" class="form"><label>Title<input name="title" required></label><label>Message<textarea name="message" required></textarea></label><div class="actions"><button class="btn primary" type="submit">Send</button></div></form></section>
+<div class="notice-list">{% for item in announcements %}<article class="card notice"><h2>{{ item.title }}</h2><p>{{ item.message }}</p><small>Posted by <strong>{{ item.author }}</strong></small><div class="reaction-count">THUMBS UP {{ item.thumbs_up }} · THUMBS DOWN {{ item.thumbs_down }}</div></article>{% else %}<div class="card empty-box">No announcements</div>{% endfor %}</div>
+{% endblock %}

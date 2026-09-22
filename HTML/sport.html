@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}{{ info.name }}{% endblock %}
+{% block content %}
+<section class="page-head"><span class="eyebrow">Sport</span><h1>{{ info.name }}</h1><div class="actions">{% if current_user.role != 'admin' and not my_player %}<a class="btn primary" href="{{ url_for('new_player', sport=sport) }}">Register player</a>{% endif %}</div></section>
+{% for label, rows in [('Female Players', female), ('Male Players', male)] %}<section class="card panel"><h2>{{ label }}</h2><div class="table-wrap"><table><thead><tr><th>Name</th><th>Surname</th><th>Age</th><th>Course</th><th>Set</th><th>Year</th><th>Position</th></tr></thead><tbody>{% for p in rows %}<tr><td>{{ p.first_name }}</td><td>{{ p.surname }}</td><td>{{ p.age }}</td><td>{{ p.course }}</td><td>{{ p.set_name }}</td><td>{{ p.year }}</td><td>{{ p.position }}</td></tr>{% else %}<tr><td colspan="7" class="empty">No players</td></tr>{% endfor %}</tbody></table></div></section>{% endfor %}
+{% endblock %}

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}CKCM Student Players List{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="site-header">
+  <nav class="nav">
+    {% if current_user %}
+    <details class="logo-menu-wrap">
+      <summary class="logo-button"><img src="{{ url_for('static', filename='ckcm-logo.png') }}" alt="CKCM"></summary>
+      <div class="logo-menu">
+        <a href="{{ url_for('student_home') if current_user.role != 'admin' else url_for('admin_dashboard') }}">Home</a>
+        <a href="{{ url_for('sports_home') }}">Sports</a>
+        {% if current_user.role == 'admin' %}
+          <a href="{{ url_for('dashboard') }}">Dashboard</a>
+          <a href="{{ url_for('admin_dashboard') }}">Admin</a>
+        {% else %}
+          <a href="{{ url_for('new_player_start') }}">Player profile</a>
+          <a href="{{ url_for('announcements') }}">Announcements</a>
+        {% endif %}
+        <a href="{{ url_for('settings') }}">Settings</a>
+        <a class="logout" href="{{ url_for('logout') }}">Log out</a>
+      </div>
+    </details>
+    {% else %}
+    <div class="logo-button logo-static"><img src="{{ url_for('static', filename='ckcm-logo.png') }}" alt="CKCM"></div>
+    {% endif %}
+    <div class="brand"><strong>CKCM</strong><span>Student Players List</span></div>
+  </nav>
+</header>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}<div class="flash-wrap">{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+{% endwith %}
+<main class="page">{% block content %}{% endblock %}</main>
+</body>
+</html>

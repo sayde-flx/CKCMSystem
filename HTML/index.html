@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block title %}CKCM Student Players List{% endblock %}
+{% block content %}
+<section class="hero card">
+  <div><span class="eyebrow">CKCM</span><h1>Student Players<br>List</h1><div class="actions"><a class="btn primary" href="{{ url_for('register') }}">Create account</a><a class="btn secondary" href="{{ url_for('login') }}">Log in</a></div></div>
+  <img class="hero-logo" src="{{ url_for('static', filename='ckcm-logo.png') }}" alt="CKCM">
+</section>
+{% endblock %}

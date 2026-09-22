@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<section class="welcome-page">
+  <div class="welcome-glow"></div>
+  <div class="welcome-content">
+    <span class="eyebrow">CKCM</span>
+    <h1>Welcome, {{ current_user.username }} CKCM Players!</h1>
+  </div>
+</section>
+{% endblock %}
