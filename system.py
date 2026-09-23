@@ -14,6 +14,19 @@ app = Flask(
     static_folder=os.path.join(BASE_DIR, "static"),
 )
 app.secret_key = os.environ.get("SECRET_KEY", "ckcm-development-secret-key")
+if app.secret_key == "ckcm-development-secret-key":
+    print(
+        "WARNING: SECRET_KEY env var is not set. Using an insecure default. "
+        "Set SECRET_KEY in Railway's Variables tab before going live.",
+        flush=True,
+    )
+if os.environ.get("ADMIN_PASSWORD") is None:
+    print(
+        "WARNING: ADMIN_PASSWORD env var is not set. Using an insecure default "
+        "admin password. Set ADMIN_USERNAME and ADMIN_PASSWORD in Railway's "
+        "Variables tab before going live.",
+        flush=True,
+    )
 
 SPORTS = {
     "basketball": {
@@ -580,4 +593,6 @@ def not_found(_):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    debug_mode = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=debug_mode)
