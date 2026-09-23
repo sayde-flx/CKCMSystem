@@ -1,6 +1,6 @@
 # CKCM Sports System — Railway deployment
 
-## Deploy steps
+## Deploysteps
 1. Push this folder (with `HTML/` and `static/` folders alongside `system.py`) to a GitHub repo.
 2. In Railway: **New Project → Deploy from GitHub repo**.
 3. Railway auto-detects Python via Nixpacks and uses the `Procfile` to start the app with gunicorn.
