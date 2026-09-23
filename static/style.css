@@ -53,3 +53,67 @@
 @keyframes barGrow{from{width:0!important}to{}}
 @media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.dashboard-grid,.bottom-grid{grid-template-columns:1fr}.shortcut-grid{grid-template-columns:repeat(2,1fr)}.admin-command-grid{grid-template-columns:1fr}}
 @media(max-width:560px){.kpi-grid,.shortcut-grid{grid-template-columns:1fr}.admin-hero{padding:25px;align-items:flex-start;flex-direction:column}.admin-hero-badge{align-items:flex-start}.bar-row{grid-template-columns:85px 1fr 24px}.admin-summary{align-items:flex-start;flex-direction:column}}
+
+/* ===== Sitewide transitions & interaction polish ===== */
+
+/* Native crossfade between full page navigations (progressive enhancement,
+   ignored by browsers that don't support it yet) */
+@view-transition{navigation:auto}
+
+/* Respect users who've asked for reduced motion */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+
+html{scroll-behavior:smooth}
+
+a{transition:color .18s ease}
+
+/* Give every button real tactile feedback, not just a hover recolor */
+.btn{transition:background-color .2s ease,color .2s ease,transform .12s ease,box-shadow .2s ease}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0) scale(.98)}
+.secondary:hover{background:#e7ebf1}
+
+/* Consistent, visible focus states across every interactive element */
+a:focus-visible,button:focus-visible,.btn:focus-visible,summary:focus-visible{
+  outline:2px solid var(--orange);outline-offset:2px;transition:outline-offset .15s ease
+}
+
+/* Form fields: smooth focus + subtle hover cue */
+.form input,.form select,.form textarea{transition:border-color .18s ease,box-shadow .18s ease,background-color .18s ease}
+.form input:hover,.form select:hover,.form textarea:hover{border-color:#c3cad6}
+
+/* Cards fade/rise in as content loads */
+.card,.notice,.panel,.kpi-card{animation:cardIn .45s ease-out both}
+.notice-list .notice:nth-child(1){animation-delay:.02s}
+.notice-list .notice:nth-child(2){animation-delay:.08s}
+.notice-list .notice:nth-child(3){animation-delay:.14s}
+.notice-list .notice:nth-child(4){animation-delay:.2s}
+
+/* Tables: row highlight + smoother link/danger-button states */
+.table-wrap tbody tr{transition:background-color .15s ease}
+.table-wrap tbody tr:hover{background:#fff7ef}
+.table-link{transition:color .18s ease,transform .18s ease;display:inline-block}
+.table-link:hover{color:#d94114;transform:translateX(2px)}
+.table-danger{transition:color .18s ease,opacity .18s ease}
+.table-danger:hover{color:#8c150f}
+
+/* Settings rows */
+.settings>div{transition:background-color .18s ease}
+.settings>div:hover{background:#fffaf6}
+
+/* Flash messages slide/fade in, and are dismissible (see base.html script) */
+.flash{animation:flashIn .3s ease-out both;transition:opacity .3s ease,transform .3s ease}
+.flash.is-leaving{opacity:0;transform:translateY(-6px)}
+
+/* Reaction buttons on announcements */
+.reaction{transition:background-color .18s ease,border-color .18s ease,transform .15s ease}
+.reaction:hover{background:#ffe9d8;border-color:#f2b995}
+.reaction:active{transform:scale(.96)}
+
+/* Sport roster / admin table wraps: gentle entrance */
+.table-wrap{animation:cardIn .4s ease-out both}
+
+@keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes flashIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
