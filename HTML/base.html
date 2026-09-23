@@ -33,8 +33,27 @@
   </nav>
 </header>
 {% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}<div class="flash-wrap">{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+  {% if messages %}
+  <div class="flash-wrap" id="flash-wrap">
+    {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+  </div>
+  {% endif %}
 {% endwith %}
 <main class="page">{% block content %}{% endblock %}</main>
+<script>
+  // Auto-dismiss flash messages: fade out after a few seconds,
+  // and remove from the DOM once the transition finishes.
+  (function () {
+    var wrap = document.getElementById('flash-wrap');
+    if (!wrap) return;
+    var flashes = wrap.querySelectorAll('.flash');
+    flashes.forEach(function (el, i) {
+      setTimeout(function () {
+        el.classList.add('is-leaving');
+        el.addEventListener('transitionend', function () { el.remove(); }, { once: true });
+      }, 4500 + i * 300);
+    });
+  })();
+</script>
 </body>
 </html>
