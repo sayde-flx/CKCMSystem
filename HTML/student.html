@@ -1,11 +1,61 @@
 {% extends 'base.html' %}
 {% block title %}Home{% endblock %}
 {% block content %}
-<section class="welcome-page">
-  <div class="welcome-glow"></div>
-  <div class="welcome-content">
-    <span class="eyebrow">CKCM</span>
-    <h1>Welcome, {{ current_user.username }} A CKCM Player!</h1>
+{% set days_left = (system_deadline - today).days %}
+<section class="card welcome">
+  <div>
+    <span class="eyebrow">Welcome back</span>
+    <h1>Hi, {{ current_user.username }}!</h1>
+    <p>Here&apos;s everything you need as a CKCM player.</p>
+  </div>
+  <div class="countdown">
+    {% if days_left >= 0 %}
+      <strong>{{ days_left }}</strong><span>day{{ '' if days_left == 1 else 's' }} left to submit</span>
+    {% else %}
+      <strong>Closed</strong><span>Submission ended {{ system_deadline.strftime('%b %d') }}</span>
+    {% endif %}
+  </div>
+</section>
+
+<div class="home-grid">
+  <section class="card panel">
+    <div class="panel-title">
+      <div><span class="eyebrow">My player profile</span><h2>{{ my_player.full_name if my_player else 'Not submitted yet' }}</h2></div>
+      {% if my_player %}<span class="status-dot ok">Submitted</span>{% else %}<span class="status-dot warn">Pending</span>{% endif %}
+    </div>
+    {% if my_player %}
+      <div class="profile-facts">
+        <div><span>Sport</span><strong>{{ sports[my_player.sport].name }}</strong></div>
+        <div><span>Position</span><strong>{{ my_player.position }}</strong></div>
+        <div><span>Course</span><strong>{{ my_player.course }}</strong></div>
+        <div><span>Year</span><strong>{{ my_player.year }}</strong></div>
+      </div>
+      <div class="actions"><a class="btn primary" href="{{ url_for('edit_my_player') }}">Edit profile</a><a class="btn secondary" href="{{ url_for('sport_roster', sport=my_player.sport) }}">View my team</a></div>
+    {% else %}
+      <p>Submit your player profile before {{ system_deadline.strftime('%B %d, %Y') }} to join a sport roster.</p>
+      <div class="actions"><a class="btn primary" href="{{ url_for('new_player_start') }}">Create player profile</a></div>
+    {% endif %}
+  </section>
+
+  <section class="card panel">
+    <div class="panel-title"><div><span class="eyebrow">Latest announcement</span><h2>{{ system.announcements[0].title if system.announcements else 'No announcements' }}</h2></div></div>
+    {% if system.announcements %}
+      <p>{{ system.announcements[0].message|truncate(160) }}</p>
+    {% else %}
+      <p>New announcements from the admins will show up here.</p>
+    {% endif %}
+    <div class="actions"><a class="btn secondary" href="{{ url_for('announcements') }}">All announcements</a></div>
+  </section>
+</div>
+
+<section class="card panel">
+  <div class="panel-title"><div><span class="eyebrow">Sports overview</span><h2>Players per sport</h2></div><span class="panel-chip">{{ system.players|length }} total</span></div>
+  <div class="bar-chart">
+    {% set total = system.players|length or 1 %}
+    {% for key, info in sports.items() %}
+      {% set count = system.players_for_sport(key)|length %}
+      <a class="bar-row" href="{{ url_for('sport_roster', sport=key) }}"><span>{{ info.name }}</span><div class="bar-track"><div class="bar-fill" style="width: {{ (count / total * 100)|round(0) }}%"></div></div><b>{{ count }}</b></a>
+    {% endfor %}
   </div>
 </section>
 {% endblock %}

@@ -395,6 +395,7 @@ def new_player(sport):
                 position=request.form.get("position", ""),
                 owner_id=user.id,
             )
+            flash(f"Profile submitted! You're now on the {SPORTS[player.sport]['name']} roster.", "success")
             return redirect(url_for("sport_roster", sport=player.sport))
         except ValueError as exc:
             flash(str(exc), "error")
