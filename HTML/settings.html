@@ -20,13 +20,9 @@
         <div><strong>{{ current_user.username }}</strong><span class="muted">{{ 'Administrator account' if is_admin else 'Student account' }}</span></div>
       </div>
       <dl class="settings-list">
-        {% if not is_admin %}
-        <div><dt>Player profile</dt><dd>{% if my_player %}<span class="status ok">Submitted</span> {{ sports[my_player.sport].name }} &middot; {{ my_player.position }}{% else %}<span class="status warn">Not submitted</span>{% endif %}</dd></div>
-        {% endif %}
         <div><dt>Submission deadline</dt><dd>{{ system_deadline.strftime('%B %d, %Y') }}</dd></div>
       </dl>
       <div class="settings-actions">
-        {% if not is_admin %}<a class="btn secondary" href="{{ url_for('edit_my_player') if my_player else url_for('new_player_start') }}">{{ 'Edit player profile' if my_player else 'Create player profile' }}</a>{% endif %}
         <a class="btn primary" href="{{ url_for('logout') }}">Log out</a>
       </div>
     </section>
