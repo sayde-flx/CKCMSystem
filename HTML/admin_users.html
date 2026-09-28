@@ -26,7 +26,7 @@
     <td>
       {% if user.id != current_user.id %}
       <form class="inline admin-inline-form" method="post"><input type="hidden" name="action" value="role"><input type="hidden" name="user_id" value="{{ user.id }}"><select name="role" aria-label="Role for {{ user.username }}"><option value="student" {{ 'selected' if user.role != 'admin' else '' }}>Student</option><option value="admin" {{ 'selected' if user.role == 'admin' else '' }}>Admin</option></select><button class="table-link button-link" type="submit">Save role</button></form>
-      <form class="inline" method="post"><input type="hidden" name="action" value="delete"><input type="hidden" name="user_id" value="{{ user.id }}"><button class="table-danger" type="submit">Remove</button></form>
+      <form class="inline" method="post" data-confirm="Remove this user account and their player profile?"><input type="hidden" name="action" value="delete"><input type="hidden" name="user_id" value="{{ user.id }}"><button class="table-danger" type="submit">Remove</button></form>
       {% else %}<span class="muted-label">Current account</span>{% endif %}
     </td>
   </tr>

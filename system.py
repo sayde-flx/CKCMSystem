@@ -306,7 +306,8 @@ def register():
                 raise ValueError("Passwords do not match.")
             user = system.add_user(request.form.get("username", ""), request.form.get("password", ""))
             session["user_id"] = user.id
-            return redirect(url_for("student_home"))
+            flash(f"Welcome to CKCM, {user.username}! Your account is ready.", "success")
+            return redirect(url_for("admin_dashboard" if is_admin_user(user) else "student_home"))
         except ValueError as exc:
             flash(str(exc), "error")
     return render_template("register.html")
@@ -322,6 +323,7 @@ def login():
             flash("Invalid username or password.", "error")
         else:
             session["user_id"] = user.id
+            flash(f"Welcome back, {user.username}!", "success")
             return redirect(url_for("admin_dashboard" if is_admin_user(user) else "student_home"))
     return render_template("login.html")
 
@@ -329,6 +331,7 @@ def login():
 @app.route("/logout")
 def logout():
     session.clear()
+    flash("You have been logged out.", "info")
     return redirect(url_for("index"))
 
 
@@ -344,6 +347,43 @@ def student_home():
 @login_required
 def settings():
     return render_template("settings.html")
+
+
+@app.post("/settings/password")
+@login_required
+def change_password():
+    user = current_user()
+    current = request.form.get("current_password", "")
+    new = request.form.get("new_password", "")
+    confirm = request.form.get("confirm_password", "")
+    if not user.verify_password(current):
+        flash("Your current password is incorrect.", "error")
+    elif len(new) < 6:
+        flash("New password must be at least 6 characters.", "error")
+    elif new != confirm:
+        flash("New passwords do not match.", "error")
+    elif new == current:
+        flash("New password must be different from the current one.", "error")
+    else:
+        user.password_hash = generate_password_hash(new)
+        flash("Password updated successfully.", "success")
+    return redirect(url_for("settings") + "#security")
+
+
+@app.post("/settings/delete-account")
+@login_required
+def delete_account():
+    user = current_user()
+    if is_admin_user(user):
+        flash("Admin accounts can only be removed from Manage users.", "error")
+        return redirect(url_for("settings"))
+    if not user.verify_password(request.form.get("password", "")):
+        flash("Password is incorrect. Your account was not deleted.", "error")
+        return redirect(url_for("settings") + "#danger")
+    system.delete_user(user.id)
+    session.clear()
+    flash("Your account and player profile have been deleted.", "success")
+    return redirect(url_for("index"))
 
 
 @app.route("/sports")
@@ -434,6 +474,7 @@ def edit_player(player_id):
                 sport=request.form.get("sport", ""),
                 position=request.form.get("position", ""),
             )
+            flash("Player profile saved successfully.", "success")
             destination = url_for("admin_players") if is_admin_user(user) else url_for("student_home")
             return redirect(destination)
         except ValueError as exc:
@@ -469,6 +510,7 @@ def react_to_announcement(announcement_id):
         return redirect(url_for("admin_announcements"))
     try:
         system.react(announcement_id, current_user().id, request.form.get("reaction", ""))
+        flash("Thanks for your feedback!", "success")
     except ValueError as exc:
         flash(str(exc), "error")
     return redirect(url_for("announcements"))
