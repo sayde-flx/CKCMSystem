@@ -399,6 +399,21 @@ def dashboard():
     return render_template("dashboard.html")
 
 
+@app.post("/dashboard/delete-user")
+@login_required
+@admin_required
+def dashboard_delete_user():
+    try:
+        user_id = int(request.form.get("user_id", "0"))
+        if user_id == current_user().id:
+            raise ValueError("You cannot delete your own account.")
+        user = system.delete_user(user_id)
+        flash(f"Account {user.username} was deleted.", "success")
+    except (ValueError, TypeError) as exc:
+        flash(str(exc), "error")
+    return redirect(url_for("dashboard") + "#accounts")
+
+
 @app.route("/player/new")
 @login_required
 def new_player_start():

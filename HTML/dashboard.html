@@ -56,6 +56,28 @@
   </div>
 </section>
 
+<section class="card dashboard-panel" id="accounts">
+  <div class="panel-title"><div><span class="eyebrow">ACCOUNT DELETION</span><h2>Delete accounts</h2></div><span class="panel-chip">{{ system.users|length }} total</span></div>
+  <div class="table-wrap"><table><thead><tr><th>Username</th><th>Role</th><th>Player profile</th><th>Action</th></tr></thead><tbody>
+  {% for user in system.users %}
+  {% set user_is_admin = user.role == 'admin' or user.username.lower().startswith('admin_') %}
+  <tr>
+    <td><strong>{{ user.username }}</strong></td>
+    <td><span class="role-badge {{ 'admin' if user_is_admin else 'student' }}">{{ 'Admin' if user_is_admin else 'Player' }}</span></td>
+    <td>{{ 'Submitted' if system.player_for_owner(user.id) else 'No profile' }}</td>
+    <td>
+      {% if user.id != current_user.id %}
+      <form class="inline" method="post" action="{{ url_for('dashboard_delete_user') }}" data-confirm="Delete {{ user.username }} and their player profile permanently?" data-loading-text="Deleting...">
+        <input type="hidden" name="user_id" value="{{ user.id }}">
+        <button class="table-danger" type="submit">Delete</button>
+      </form>
+      {% else %}<span class="muted-label">Current account</span>{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody></table></div>
+</section>
+
 <section class="dashboard-grid bottom-grid">
   <div class="card dashboard-panel alert-panel">
     <div class="panel-title"><div><span class="eyebrow">SYSTEM ALERTS</span><h2>Attention</h2></div></div>

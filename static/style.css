@@ -313,6 +313,8 @@ tr.is-me td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 [data-accent="red"]{--brand:#dc2626;--brand-dark:#b91c1c;--brand-soft:#fee2e2;--brand-tint:#fef2f2}
 [data-accent="gold"]{--brand:#c98a06;--brand-dark:#a16207;--brand-soft:#fef3c7;--brand-tint:#fffbeb}
 [data-accent="blue"]{--brand:#2563eb;--brand-dark:#1d4ed8;--brand-soft:#dbeafe;--brand-tint:#eff6ff}
+[data-accent="purple"]{--brand:#7c3aed;--brand-dark:#6d28d9;--brand-soft:#ede9fe;--brand-tint:#f5f3ff}
+.welcome-only{justify-content:center;text-align:center;min-height:14rem}
 
 /* Dark theme */
 [data-theme="dark"]{--bg:#120d0b;--surface:#1c1512;--ink:#f6ede6;--muted:#b3a399;--line:#33271f;--brand-soft:color-mix(in srgb,var(--brand) 22%,#1c1512);--brand-tint:color-mix(in srgb,var(--brand) 12%,#1c1512);--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);color-scheme:dark}
