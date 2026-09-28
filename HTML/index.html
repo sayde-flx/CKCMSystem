@@ -1,8 +1,19 @@
 {% extends 'base.html' %}
-{% block title %}CKCM Student Players List{% endblock %}
+{% block title %}Student Players List{% endblock %}
 {% block content %}
 <section class="hero card">
-  <div><span class="eyebrow">CKCM</span><h1>Student Players<br>List</h1><div class="actions"><a class="btn primary" href="{{ url_for('register') }}">Create account</a><a class="btn secondary" href="{{ url_for('login') }}">Log in</a></div></div>
-  <img class="hero-logo" src="{{ url_for('static', filename='ckcm-logo.png') }}" alt="CKCM">
+  <div>
+    <span class="eyebrow">CKCM Athletics</span>
+    <h1>Student Players List</h1>
+    <p>One place for CKCM students to register as players, browse team rosters, and stay updated with announcements.</p>
+    <div class="actions"><a class="btn accent" href="{{ url_for('register') }}">Create account</a><a class="btn secondary" href="{{ url_for('login') }}">Log in</a></div>
+  </div>
+  <img class="hero-logo" src="{{ url_for('static', filename='ckcm-logo.png') }}" alt="CKCM logo">
 </section>
+
+<div class="feature-grid">
+  <div class="card feature"><span class="feature-icon">{{ sports|length }}</span><b>Sports</b><p>{{ sports.values()|map(attribute='name')|join(', ') }}.</p></div>
+  <div class="card feature"><span class="feature-icon">{{ system.players|length }}</span><b>Registered players</b><p>Submit one player profile and join your sport roster.</p></div>
+  <div class="card feature"><span class="feature-icon">&#10003;</span><b>Deadline</b><p>Submissions close on {{ system_deadline.strftime('%B %d, %Y') }}.</p></div>
+</div>
 {% endblock %}

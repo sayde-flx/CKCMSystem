@@ -1,6 +1,19 @@
 {% extends 'base.html' %}
 {% block title %}Player profile{% endblock %}
 {% block content %}
-<section class="page-head"><span class="eyebrow">Player profile</span><h1>Choose sport</h1></section>
-<div class="sports-grid">{% for key, info in sports.items() %}<a class="card sport-card" href="{{ url_for('new_player', sport=key) }}"><span>{{ info.name }}</span><b>Open</b></a>{% endfor %}</div>
+<section class="page-head">
+  <span class="eyebrow">Player profile &middot; Step 1 of 2</span>
+  <h1>Choose your sport</h1>
+  <p>Pick the sport you want to play. You&apos;ll fill in your details next. Deadline: {{ system_deadline.strftime('%B %d, %Y') }}.</p>
+</section>
+<div class="sports-grid">
+{% for key, info in sports.items() %}
+  <a class="card sport-card" href="{{ url_for('new_player', sport=key) }}">
+    <span class="sport-number">0{{ loop.index }}</span>
+    <span>{{ info.name }}</span>
+    <small class="sport-choice-meta">{{ info.positions|join(' · ') }}</small>
+    <b>Select &rarr;</b>
+  </a>
+{% endfor %}
+</div>
 {% endblock %}

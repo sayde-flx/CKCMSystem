@@ -3,51 +3,71 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>{% block title %}CKCM Student Sports List{% endblock %}</title>
+  <meta name="theme-color" content="#0f1b3d">
+  <meta name="description" content="CKCM Student Sports List - register, browse, and manage student athletes.">
+  <title>{% block title %}CKCM Student Sports List{% endblock %} · CKCM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+{% set ep = request.endpoint or '' %}
 <header class="site-header">
-  <nav class="nav">
+  <nav class="nav" aria-label="Main">
+    <a class="brand" href="{{ (url_for('admin_dashboard') if is_admin else url_for('student_home')) if current_user else url_for('index') }}">
+      <img src="{{ url_for('static', filename='ckcm-logo.png') }}" alt="">
+      <div><strong>CKCM</strong><span>Student Sports List</span></div>
+    </a>
     {% if current_user %}
-    <details class="logo-menu-wrap">
-      <summary class="logo-button"><img src="{{ url_for('static', filename='ckcm-logo.png') }}" alt="CKCM"></summary>
-      <div class="logo-menu">
-        <a href="{{ url_for('student_home') if current_user.role != 'admin' else url_for('admin_dashboard') }}">Home</a>
-        <a href="{{ url_for('sports_home') }}">Sports</a>
-        {% if current_user.role == 'admin' %}
-          <a href="{{ url_for('dashboard') }}">Dashboard</a>
-          <a href="{{ url_for('admin_dashboard') }}">Admin</a>
-        {% else %}
-          <a href="{{ url_for('new_player_start') }}">Player profile</a>
-          <a href="{{ url_for('announcements') }}">Announcements</a>
-        {% endif %}
-        <a href="{{ url_for('settings') }}">Settings</a>
-        <a class="logout" href="{{ url_for('logout') }}">Log out</a>
-      </div>
-    </details>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links" id="nav-toggle"><span class="sr-only">Toggle menu</span>&#9776;</button>
+    <div class="nav-links" id="nav-links">
+      {% if is_admin %}
+        <a class="{{ 'active' if ep == 'admin_dashboard' }}" href="{{ url_for('admin_dashboard') }}">Home</a>
+        <a class="{{ 'active' if ep in ['sports_home','sport_roster'] }}" href="{{ url_for('sports_home') }}">Sports</a>
+        <a class="{{ 'active' if ep == 'dashboard' }}" href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a class="{{ 'active' if ep.startswith('admin_') and ep != 'admin_dashboard' }}" href="{{ url_for('admin_players') }}">Manage</a>
+      {% else %}
+        <a class="{{ 'active' if ep == 'student_home' }}" href="{{ url_for('student_home') }}">Home</a>
+        <a class="{{ 'active' if ep in ['sports_home','sport_roster'] }}" href="{{ url_for('sports_home') }}">Sports</a>
+        <a class="{{ 'active' if ep in ['new_player_start','new_player','edit_my_player','edit_player'] }}" href="{{ url_for('new_player_start') }}">Player profile</a>
+        <a class="{{ 'active' if ep == 'announcements' }}" href="{{ url_for('announcements') }}">Announcements</a>
+      {% endif %}
+      <a class="{{ 'active' if ep == 'settings' }}" href="{{ url_for('settings') }}">Settings</a>
+      <a class="logout" href="{{ url_for('logout') }}">Log out</a>
+    </div>
     {% else %}
-    <div class="logo-button logo-static"><img src="{{ url_for('static', filename='ckcm-logo.png') }}" alt="CKCM"></div>
+    <div class="nav-links open" style="flex-direction:row;width:auto;padding:0">
+      <a class="{{ 'active' if ep == 'login' }}" href="{{ url_for('login') }}">Log in</a>
+      <a class="{{ 'active' if ep == 'register' }}" href="{{ url_for('register') }}">Sign up</a>
+    </div>
     {% endif %}
-    <div class="brand"><strong>CKCM</strong><span>Student Sports List</span></div>
   </nav>
 </header>
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
-  <div class="flash-wrap" id="flash-wrap">
+  <div class="flash-wrap" id="flash-wrap" role="status">
     {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
   </div>
   {% endif %}
 {% endwith %}
 <main class="page">{% block content %}{% endblock %}</main>
+<footer class="site-footer">&copy; {{ today.year }} CKCM Student Sports List</footer>
+<style>.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}</style>
 <script>
-  // Auto-dismiss flash messages: fade out after a few seconds,
-  // and remove from the DOM once the transition finishes.
   (function () {
+    var toggle = document.getElementById('nav-toggle');
+    var links = document.getElementById('nav-links');
+    if (toggle && links) {
+      toggle.addEventListener('click', function () {
+        var open = links.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+    }
+    // Auto-dismiss flash messages after a few seconds.
     var wrap = document.getElementById('flash-wrap');
     if (!wrap) return;
-    var flashes = wrap.querySelectorAll('.flash');
-    flashes.forEach(function (el, i) {
+    wrap.querySelectorAll('.flash').forEach(function (el, i) {
       setTimeout(function () {
         el.classList.add('is-leaving');
         el.addEventListener('transitionend', function () { el.remove(); }, { once: true });
@@ -55,5 +75,6 @@
     });
   })();
 </script>
+{% block scripts %}{% endblock %}
 </body>
 </html>

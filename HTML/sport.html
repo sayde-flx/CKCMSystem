@@ -1,6 +1,57 @@
 {% extends 'base.html' %}
 {% block title %}{{ info.name }}{% endblock %}
 {% block content %}
-<section class="page-head"><span class="eyebrow">Sport</span><h1>{{ info.name }}</h1><div class="actions">{% if current_user.role != 'admin' and not my_player %}<a class="btn primary" href="{{ url_for('new_player', sport=sport) }}">Register player</a>{% endif %}</div></section>
-{% for label, rows in [('Female Players', female), ('Male Players', male)] %}<section class="card panel"><h2>{{ label }}</h2><div class="table-wrap"><table><thead><tr><th>Name</th><th>Surname</th><th>Age</th><th>Course</th><th>Set</th><th>Year</th><th>Position</th></tr></thead><tbody>{% for p in rows %}<tr><td>{{ p.first_name }}</td><td>{{ p.surname }}</td><td>{{ p.age }}</td><td>{{ p.course }}</td><td>{{ p.set_name }}</td><td>{{ p.year }}</td><td>{{ p.position }}</td></tr>{% else %}<tr><td colspan="7" class="empty">No players</td></tr>{% endfor %}</tbody></table></div></section>{% endfor %}
+<section class="page-head">
+  <a class="back-link" href="{{ url_for('sports_home') }}">&larr; All sports</a>
+  <span class="eyebrow">Sport roster</span>
+  <h1>{{ info.name }}</h1>
+  <p>Registered players for {{ info.name }}, grouped by division.</p>
+</section>
+
+<div class="roster-toolbar">
+  <div class="stat-row">
+    <div class="card stat"><strong>{{ female|length + male|length }}</strong><span>Total players</span></div>
+    <div class="card stat"><strong>{{ female|length }}</strong><span>Female</span></div>
+    <div class="card stat"><strong>{{ male|length }}</strong><span>Male</span></div>
+  </div>
+  <label style="flex:1;max-width:340px">
+    <span class="sr-only">Search players</span>
+    <input type="search" id="roster-search" placeholder="Search name, course, or position..." autocomplete="off">
+  </label>
+</div>
+
+{% for label, rows in [('Female Players', female), ('Male Players', male)] %}
+<section class="card panel">
+  <div class="panel-title"><h2>{{ label }}</h2><span class="panel-chip">{{ rows|length }}</span></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Name</th><th>Surname</th><th>Age</th><th>Course</th><th>Set</th><th>Year</th><th>Position</th></tr></thead>
+      <tbody>
+      {% for p in rows %}
+        <tr class="roster-row{{ ' is-me' if my_player and my_player.id == p.id }}">
+          <td>{{ p.first_name }}{% if my_player and my_player.id == p.id %}<span class="pill">You</span>{% endif %}</td>
+          <td>{{ p.surname }}</td><td>{{ p.age }}</td><td>{{ p.course }}</td><td>{{ p.set_name }}</td><td>{{ p.year }}</td><td>{{ p.position }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="empty">No players yet</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endfor %}
+{% endblock %}
+{% block scripts %}
+<script>
+  (function () {
+    var input = document.getElementById('roster-search');
+    var rows = document.querySelectorAll('.roster-row');
+    input.addEventListener('input', function () {
+      var q = input.value.trim().toLowerCase();
+      rows.forEach(function (row) {
+        row.hidden = q && row.textContent.toLowerCase().indexOf(q) === -1;
+      });
+    });
+  })();
+</script>
 {% endblock %}
