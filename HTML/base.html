@@ -10,6 +10,28 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script>
+    (function () {
+      var defaults = { theme: 'light', accent: 'orange', size: 'md', motion: 'off', compact: 'off', toasts: 'on', sound: 'off', confirm: 'on', duration: '5000' };
+      function get(k) { try { return localStorage.getItem('ckcm:' + k) || defaults[k]; } catch (e) { return defaults[k]; } }
+      function apply() {
+        var root = document.documentElement, theme = get('theme');
+        if (theme === 'system') theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        root.dataset.theme = theme;
+        root.dataset.accent = get('accent');
+        root.dataset.size = get('size');
+        root.dataset.motion = get('motion') === 'on' ? 'reduce' : 'full';
+        root.dataset.compact = get('compact');
+      }
+      window.CKCM = {
+        get: get,
+        set: function (k, v) { try { localStorage.setItem('ckcm:' + k, v); } catch (e) {} apply(); },
+        reset: function () { Object.keys(defaults).forEach(function (k) { try { localStorage.removeItem('ckcm:' + k); } catch (e) {} }); apply(); },
+        apply: apply
+      };
+      apply();
+    })();
+  </script>
 </head>
 <body>
 {% set ep = request.endpoint or '' %}
@@ -53,12 +75,9 @@
     {% endif %}
   </nav>
 </header>
+<div class="flash-wrap" id="flash-wrap" role="status" aria-live="polite"></div>
 {% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-  <div class="flash-wrap" id="flash-wrap" role="status">
-    {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
-  </div>
-  {% endif %}
+<script type="application/json" id="flash-data">{{ messages|tojson }}</script>
 {% endwith %}
 <main class="page">{% block content %}{% endblock %}</main>
 <footer class="site-footer">&copy; {{ today.year }} CKCM Student Sports List</footer>
@@ -74,15 +93,69 @@
         if (e.key === 'Escape' && menu.open) { menu.open = false; menu.querySelector('summary').focus(); }
       });
     }
-    // Auto-dismiss flash messages after a few seconds.
+    var P = window.CKCM;
     var wrap = document.getElementById('flash-wrap');
-    if (!wrap) return;
-    wrap.querySelectorAll('.flash').forEach(function (el, i) {
-      setTimeout(function () {
-        el.classList.add('is-leaving');
-        el.addEventListener('transitionend', function () { el.remove(); }, { once: true });
-      }, 4500 + i * 300);
+    var titles = { success: 'Success', error: 'Something went wrong', info: 'Notice', message: 'Notice' };
+    var icons = { success: '\u2713', error: '!', info: 'i', message: 'i' };
+
+    function chime(type) {
+      if (P.get('sound') !== 'on') return;
+      try {
+        var ctx = new (window.AudioContext || window.webkitAudioContext)();
+        var osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.frequency.value = type === 'error' ? 260 : 660;
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.3);
+      } catch (e) {}
+    }
+
+    function dismiss(el) {
+      if (el.classList.contains('is-leaving')) return;
+      el.classList.add('is-leaving');
+      setTimeout(function () { el.remove(); }, 350);
+    }
+
+    P.toast = function (message, type, force) {
+      type = type || 'info';
+      if (type !== 'error' && !force && P.get('toasts') === 'off') return;
+      var duration = parseInt(P.get('duration'), 10) || 5000;
+      var el = document.createElement('div');
+      el.className = 'flash ' + type;
+      el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+      el.style.setProperty('--toast-duration', duration + 'ms');
+      el.innerHTML = '<span class="flash-icon" aria-hidden="true"></span><div class="flash-body"><strong></strong><p></p></div><button type="button" class="flash-close" aria-label="Dismiss notification">&times;</button><span class="flash-progress" aria-hidden="true"></span>';
+      el.querySelector('.flash-icon').textContent = icons[type] || 'i';
+      el.querySelector('strong').textContent = titles[type] || 'Notice';
+      el.querySelector('p').textContent = message;
+      el.querySelector('.flash-close').addEventListener('click', function () { dismiss(el); });
+      wrap.appendChild(el);
+      chime(type);
+      setTimeout(function () { dismiss(el); }, duration);
+    };
+
+    try {
+      JSON.parse(document.getElementById('flash-data').textContent || '[]').forEach(function (m, i) {
+        setTimeout(function () { P.toast(m[1], m[0]); }, i * 150);
+      });
+    } catch (e) {}
+
+    document.addEventListener('submit', function (e) {
+      var form = e.target;
+      if (form.dataset.confirm && P.get('confirm') === 'on' && !window.confirm(form.dataset.confirm)) {
+        e.preventDefault();
+        return;
+      }
+      var btn = e.submitter || form.querySelector('[type=submit]');
+      if (btn && btn.classList.contains('btn')) {
+        btn.classList.add('is-loading');
+        btn.setAttribute('aria-busy', 'true');
+        if (form.dataset.loadingText) btn.textContent = form.dataset.loadingText;
+      }
     });
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', P.apply);
   })();
 </script>
 {% block scripts %}{% endblock %}

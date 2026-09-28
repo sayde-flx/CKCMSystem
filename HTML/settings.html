@@ -1,6 +1,161 @@
 {% extends 'base.html' %}
 {% block title %}Settings{% endblock %}
 {% block content %}
-<section class="page-head"><span class="eyebrow">Settings</span><h1>Account</h1></section>
-<section class="card panel settings"><div><span>Username</span><strong>{{ current_user.username }}</strong></div><div><span>Account</span><strong>{{ 'Admin' if current_user.role == 'admin' else 'Student' }}</strong></div><a class="btn primary" href="{{ url_for('logout') }}">Log out</a></section>
+<section class="page-head"><span class="eyebrow">Settings</span><h1>Preferences &amp; account</h1><p class="muted">Customize how CKCM looks and behaves for you.</p></section>
+
+<div class="settings-layout">
+  <nav class="settings-nav card" aria-label="Settings sections">
+    <a href="#account">Account</a>
+    <a href="#appearance">Appearance</a>
+    <a href="#notifications">Notifications</a>
+    <a href="#security">Security</a>
+    {% if not is_admin %}<a href="#danger" class="danger-link">Danger zone</a>{% endif %}
+  </nav>
+
+  <div class="settings-stack">
+    <section class="card panel" id="account">
+      <div class="panel-title"><div><span class="eyebrow">Account</span><h2>Your profile</h2></div><span class="panel-chip">{{ 'Admin' if is_admin else 'Student' }}</span></div>
+      <div class="settings-profile">
+        <span class="avatar" aria-hidden="true">{{ current_user.username[:1]|upper }}</span>
+        <div><strong>{{ current_user.username }}</strong><span class="muted">{{ 'Administrator account' if is_admin else 'Student account' }}</span></div>
+      </div>
+      <dl class="settings-list">
+        {% if not is_admin %}
+        <div><dt>Player profile</dt><dd>{% if my_player %}<span class="status ok">Submitted</span> {{ sports[my_player.sport].name }} &middot; {{ my_player.position }}{% else %}<span class="status warn">Not submitted</span>{% endif %}</dd></div>
+        {% endif %}
+        <div><dt>Submission deadline</dt><dd>{{ system_deadline.strftime('%B %d, %Y') }}</dd></div>
+      </dl>
+      <div class="settings-actions">
+        {% if not is_admin %}<a class="btn secondary" href="{{ url_for('edit_my_player') if my_player else url_for('new_player_start') }}">{{ 'Edit player profile' if my_player else 'Create player profile' }}</a>{% endif %}
+        <a class="btn primary" href="{{ url_for('logout') }}">Log out</a>
+      </div>
+    </section>
+
+    <section class="card panel" id="appearance">
+      <div class="panel-title"><div><span class="eyebrow">Appearance</span><h2>Site theme</h2></div><button type="button" class="btn secondary btn-sm" id="reset-prefs">Reset</button></div>
+
+      <fieldset class="setting-group">
+        <legend>Theme</legend>
+        <div class="choice-row" data-pref="theme">
+          <label class="choice"><input type="radio" name="theme" value="light"><span class="swatch sw-light"></span>Light</label>
+          <label class="choice"><input type="radio" name="theme" value="dark"><span class="swatch sw-dark"></span>Dark</label>
+          <label class="choice"><input type="radio" name="theme" value="system"><span class="swatch sw-system"></span>System</label>
+        </div>
+      </fieldset>
+
+      <fieldset class="setting-group">
+        <legend>Accent color</legend>
+        <div class="choice-row" data-pref="accent">
+          <label class="choice"><input type="radio" name="accent" value="orange"><span class="dot" style="background:#ea580c"></span>CKCM Orange</label>
+          <label class="choice"><input type="radio" name="accent" value="red"><span class="dot" style="background:#dc2626"></span>Crimson</label>
+          <label class="choice"><input type="radio" name="accent" value="gold"><span class="dot" style="background:#d99a0b"></span>Crown Gold</label>
+          <label class="choice"><input type="radio" name="accent" value="blue"><span class="dot" style="background:#2563eb"></span>Royal Blue</label>
+        </div>
+      </fieldset>
+
+      <fieldset class="setting-group">
+        <legend>Text size</legend>
+        <div class="choice-row" data-pref="size">
+          <label class="choice"><input type="radio" name="size" value="sm">Small</label>
+          <label class="choice"><input type="radio" name="size" value="md">Default</label>
+          <label class="choice"><input type="radio" name="size" value="lg">Large</label>
+        </div>
+      </fieldset>
+
+      <div class="toggle-row">
+        <div><strong>Reduce motion</strong><span class="muted">Turn off animations and transitions.</span></div>
+        <label class="switch"><input type="checkbox" data-pref-toggle="motion" aria-label="Reduce motion"><span></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><strong>Compact layout</strong><span class="muted">Tighter spacing to fit more on screen.</span></div>
+        <label class="switch"><input type="checkbox" data-pref-toggle="compact" aria-label="Compact layout"><span></span></label>
+      </div>
+    </section>
+
+    <section class="card panel" id="notifications">
+      <div class="panel-title"><div><span class="eyebrow">Notifications</span><h2>Alerts &amp; responses</h2></div><button type="button" class="btn secondary btn-sm" id="test-toast">Send test</button></div>
+      <div class="toggle-row">
+        <div><strong>Success notifications</strong><span class="muted">Show a confirmation after saving or submitting. Errors always show.</span></div>
+        <label class="switch"><input type="checkbox" data-pref-toggle="toasts" data-default="on" aria-label="Success notifications"><span></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><strong>Notification sound</strong><span class="muted">Play a short chime with each notification.</span></div>
+        <label class="switch"><input type="checkbox" data-pref-toggle="sound" aria-label="Notification sound"><span></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><strong>Confirm before deleting</strong><span class="muted">Ask before removing players, users or announcements.</span></div>
+        <label class="switch"><input type="checkbox" data-pref-toggle="confirm" data-default="on" aria-label="Confirm before deleting"><span></span></label>
+      </div>
+      <label class="setting-inline">Notification duration
+        <select data-pref-select="duration">
+          <option value="3000">3 seconds</option>
+          <option value="5000">5 seconds</option>
+          <option value="8000">8 seconds</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="card panel" id="security">
+      <div class="panel-title"><div><span class="eyebrow">Security</span><h2>Change password</h2></div></div>
+      <form method="post" action="{{ url_for('change_password') }}" class="form-grid" data-loading-text="Updating...">
+        <label>Current password<input type="password" name="current_password" autocomplete="current-password" required></label>
+        <label>New password<input type="password" name="new_password" minlength="6" autocomplete="new-password" required></label>
+        <label>Confirm new password<input type="password" name="confirm_password" minlength="6" autocomplete="new-password" required></label>
+        <div><button class="btn primary" type="submit">Update password</button></div>
+      </form>
+    </section>
+
+    {% if not is_admin %}
+    <section class="card panel danger-panel" id="danger">
+      <div class="panel-title"><div><span class="eyebrow">Danger zone</span><h2>Delete account</h2></div></div>
+      <p class="muted">This permanently removes your account and player profile from every roster.</p>
+      <form method="post" action="{{ url_for('delete_account') }}" class="danger-form" data-confirm="Delete your account permanently? This cannot be undone." data-loading-text="Deleting...">
+        <label>Confirm with your password<input type="password" name="password" autocomplete="current-password" required></label>
+        <button class="btn danger" type="submit">Delete my account</button>
+      </form>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var P = window.CKCM;
+  document.querySelectorAll('[data-pref]').forEach(function (group) {
+    var key = group.dataset.pref;
+    group.querySelectorAll('input').forEach(function (input) {
+      input.checked = P.get(key) === input.value;
+      input.addEventListener('change', function () {
+        P.set(key, input.value);
+        P.toast(input.parentElement.textContent.trim() + ' ' + key + ' applied.', 'success');
+      });
+    });
+  });
+  document.querySelectorAll('[data-pref-toggle]').forEach(function (input) {
+    var key = input.dataset.prefToggle;
+    input.checked = P.get(key) === 'on';
+    input.addEventListener('change', function () {
+      P.set(key, input.checked ? 'on' : 'off');
+      P.toast(input.getAttribute('aria-label') + (input.checked ? ' turned on.' : ' turned off.'), 'success', true);
+    });
+  });
+  document.querySelectorAll('[data-pref-select]').forEach(function (select) {
+    var key = select.dataset.prefSelect;
+    select.value = P.get(key);
+    select.addEventListener('change', function () {
+      P.set(key, select.value);
+      P.toast('Notifications will now show for ' + select.selectedOptions[0].text + '.', 'success');
+    });
+  });
+  document.getElementById('test-toast').addEventListener('click', function () {
+    P.toast('This is how your notifications will look.', 'info', true);
+  });
+  document.getElementById('reset-prefs').addEventListener('click', function () {
+    P.reset();
+    location.reload();
+  });
+})();
+</script>
 {% endblock %}
