@@ -15,13 +15,14 @@
 {% set ep = request.endpoint or '' %}
 <header class="site-header">
   <nav class="nav" aria-label="Main">
-    <a class="brand" href="{{ (url_for('admin_dashboard') if is_admin else url_for('student_home')) if current_user else url_for('index') }}">
-      <img src="{{ url_for('static', filename='ckcm-logo.png') }}" alt="">
-      <div><strong>CKCM</strong><span>Student Sports List</span></div>
-    </a>
     {% if current_user %}
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links" id="nav-toggle"><span class="sr-only">Toggle menu</span>&#9776;</button>
-    <div class="nav-links" id="nav-links">
+    <details class="logo-menu-wrap" id="logo-menu">
+      <summary class="logo-button" aria-label="Open menu">
+        <img src="{{ url_for('static', filename='ckcm-logo.png') }}" alt="CKCM">
+        <span class="burger-badge" aria-hidden="true"><i></i><i></i><i></i></span>
+      </summary>
+      <div class="logo-menu nav-links">
+        <p class="logo-menu-title">Menu</p>
       {% if is_admin %}
         <a class="{{ 'active' if ep == 'admin_dashboard' }}" href="{{ url_for('admin_dashboard') }}">Home</a>
         <a class="{{ 'active' if ep in ['sports_home','sport_roster'] }}" href="{{ url_for('sports_home') }}">Sports</a>
@@ -35,9 +36,17 @@
       {% endif %}
       <a class="{{ 'active' if ep == 'settings' }}" href="{{ url_for('settings') }}">Settings</a>
       <a class="logout" href="{{ url_for('logout') }}">Log out</a>
-    </div>
+      </div>
+    </details>
+    <a class="brand" href="{{ url_for('admin_dashboard') if is_admin else url_for('student_home') }}">
+      <div><strong>CKCM</strong><span>Student Sports List</span></div>
+    </a>
     {% else %}
-    <div class="nav-links open" style="flex-direction:row;width:auto;padding:0">
+    <a class="brand" href="{{ url_for('index') }}">
+      <span class="logo-button logo-static"><img src="{{ url_for('static', filename='ckcm-logo.png') }}" alt=""></span>
+      <div><strong>CKCM</strong><span>Student Sports List</span></div>
+    </a>
+    <div class="nav-links guest-links">
       <a class="{{ 'active' if ep == 'login' }}" href="{{ url_for('login') }}">Log in</a>
       <a class="{{ 'active' if ep == 'register' }}" href="{{ url_for('register') }}">Sign up</a>
     </div>
@@ -56,12 +65,13 @@
 <style>.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}</style>
 <script>
   (function () {
-    var toggle = document.getElementById('nav-toggle');
-    var links = document.getElementById('nav-links');
-    if (toggle && links) {
-      toggle.addEventListener('click', function () {
-        var open = links.classList.toggle('open');
-        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    var menu = document.getElementById('logo-menu');
+    if (menu) {
+      document.addEventListener('click', function (e) {
+        if (menu.open && !menu.contains(e.target)) menu.open = false;
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && menu.open) { menu.open = false; menu.querySelector('summary').focus(); }
       });
     }
     // Auto-dismiss flash messages after a few seconds.
