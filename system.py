@@ -5,6 +5,7 @@ from datetime import date
 import csv
 import io
 import os
+import re
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -50,6 +51,20 @@ SPORTS = {
         "positions": ["Singles", "Doubles", "Mixed Doubles"],
     },
 }
+
+
+def parse_positions(raw):
+    """Turn a comma / new-line separated string into a clean, de-duplicated list."""
+    seen, result = set(), []
+    for part in (raw or "").replace(",", "\n").splitlines():
+        name = part.strip()
+        if name and name.lower() not in seen:
+            seen.add(name.lower())
+            result.append(name)
+    return result
+
+
+ROLES = ("student", "coach", "admin")
 
 
 class BaseEntity:
@@ -132,6 +147,8 @@ class CKCMSportsSystem:
             raise ValueError("Password must be at least 6 characters.")
         # CKCM admin accounts use the explicit admin_ username convention.
         # This also makes newly registered admin_<name> accounts behave as admins.
+        if role not in ROLES:
+            role = "student"
         if username.lower().startswith("admin_"):
             role = "admin"
         user = User(self.next_user_id, username, password, role)
@@ -211,6 +228,51 @@ class CKCMSportsSystem:
         self.users.remove(user)
         self.players[:] = [p for p in self.players if p.owner_id != user_id]
         return user
+
+    def add_sport(self, name, positions_raw):
+        name = " ".join((name or "").split())
+        if not name:
+            raise ValueError("Sport name is required.")
+        if len(name) > 40:
+            raise ValueError("Sport name is too long (40 characters max).")
+        if any(info["name"].lower() == name.lower() for info in SPORTS.values()):
+            raise ValueError("That sport already exists.")
+        positions = parse_positions(positions_raw)
+        if not positions:
+            raise ValueError("Add at least one position (separate them with commas or new lines).")
+        key = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+        if not key:
+            raise ValueError("Use letters or numbers in the sport name.")
+        base, n = key, 2
+        while key in SPORTS:
+            key, n = f"{base}-{n}", n + 1
+        SPORTS[key] = {"name": name, "positions": positions}
+        return key
+
+    def update_sport_positions(self, key, positions_raw):
+        if key not in SPORTS:
+            raise ValueError("Sport not found.")
+        positions = parse_positions(positions_raw)
+        if not positions:
+            raise ValueError("A sport needs at least one position.")
+        lowered = {p.lower() for p in positions}
+        for player in self.players_for_sport(key):
+            if player.position.lower() not in lowered:
+                raise ValueError(
+                    f"Cannot remove '{player.position}': {player.full_name} is registered with that position."
+                )
+        # Keep the exact stored spelling for positions already in use.
+        SPORTS[key]["positions"] = positions
+
+    def delete_sport(self, key):
+        if key not in SPORTS:
+            raise ValueError("Sport not found.")
+        count = len(self.players_for_sport(key))
+        if count:
+            raise ValueError(f"Cannot remove {SPORTS[key]['name']}: {count} player(s) are registered. Move or remove them first.")
+        if len(SPORTS) <= 1:
+            raise ValueError("At least one sport must remain.")
+        del SPORTS[key]
 
     def players_for_sport(self, sport):
         return sorted(
@@ -298,6 +360,7 @@ def inject_globals():
         "my_players": system.players_for_owner(user.id) if user else [],
         "my_player_ids": {p.id for p in system.players_for_owner(user.id)} if user else set(),
         "is_admin": is_admin_user(user),
+        "is_coach": bool(user) and user.role == "coach",
         "today": date.today(),
         "system": system,
     }
@@ -563,23 +626,32 @@ def admin_dashboard():
 @login_required
 @admin_required
 def admin_users():
+    form_values = {"username": "", "role": "student"}
     if request.method == "POST":
         action = request.form.get("action", "")
         try:
             if action == "add":
-                system.add_user(
+                if request.form.get("password", "") != request.form.get("confirm_password", ""):
+                    raise ValueError("Passwords do not match.")
+                new_user = system.add_user(
                     request.form.get("username", ""),
                     request.form.get("password", ""),
                     request.form.get("role", "student"),
                 )
-                flash("User account added.", "success")
+                flash(f"Account {new_user.username} added as {'Admin' if is_admin_user(new_user) else 'Student'}.", "success")
+                return redirect(url_for("admin_users"))
             elif action == "role":
                 user = system.get_user(int(request.form.get("user_id", "0")))
                 if not user:
                     raise ValueError("User not found.")
                 if user.id == current_user().id:
                     raise ValueError("You cannot change your own role here.")
-                user.role = "admin" if request.form.get("role") == "admin" or user.username.lower().startswith("admin_") else "student"
+                new_role = request.form.get("role", "student")
+                if user.username.lower().startswith("admin_"):
+                    new_role = "admin"
+                elif new_role not in ROLES:
+                    new_role = "student"
+                user.role = new_role
                 flash("User role updated.", "success")
             elif action == "delete":
                 user_id = int(request.form.get("user_id", "0"))
@@ -589,7 +661,32 @@ def admin_users():
                 flash("User account removed.", "success")
         except (ValueError, TypeError) as exc:
             flash(str(exc), "error")
-    return render_template("admin_users.html", users=system.users)
+            if action == "add":
+                form_values = {"username": request.form.get("username", ""), "role": request.form.get("role", "student")}
+    return render_template("admin_users.html", users=system.users, form_values=form_values)
+
+
+@app.route("/admin/sports", methods=["GET", "POST"])
+@login_required
+@admin_required
+def admin_sports():
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        try:
+            if action == "add":
+                key = system.add_sport(request.form.get("name", ""), request.form.get("positions", ""))
+                flash(f"{SPORTS[key]['name']} was added.", "success")
+            elif action == "positions":
+                system.update_sport_positions(request.form.get("sport", ""), request.form.get("positions", ""))
+                flash("Positions updated.", "success")
+            elif action == "delete":
+                name = SPORTS.get(request.form.get("sport", ""), {}).get("name", "Sport")
+                system.delete_sport(request.form.get("sport", ""))
+                flash(f"{name} was removed.", "success")
+        except ValueError as exc:
+            flash(str(exc), "error")
+        return redirect(url_for("admin_sports"))
+    return render_template("admin_sports.html")
 
 
 @app.route("/admin/players")
