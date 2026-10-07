@@ -1,0 +1,8 @@
+{% set mep = request.endpoint or '' %}
+<nav class="card manage-tabs" aria-label="Manage sections">
+  <a class="{{ 'active' if mep in ['admin_players'] or (mep == 'edit_player') }}" href="{{ url_for('admin_players') }}">Players</a>
+  {% if is_admin %}<a class="{{ 'active' if mep == 'admin_users' }}" href="{{ url_for('admin_users') }}">Accounts &amp; Roles</a>{% endif %}
+  {% if is_admin %}<a class="{{ 'active' if mep == 'admin_sports' }}" href="{{ url_for('admin_sports') }}">Sports</a>{% endif %}
+  {% if is_admin %}<a class="{{ 'active' if mep == 'admin_deadline' }}" href="{{ url_for('admin_deadline') }}">Deadline</a>{% endif %}
+  {% if is_admin %}<a class="{{ 'active' if mep == 'admin_announcements' }}" href="{{ url_for('admin_announcements') }}">Announcements</a>{% endif %}
+</nav>
