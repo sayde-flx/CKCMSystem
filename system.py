@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, abort
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import date
+from datetime import date, datetime
 import csv
 import io
 import os
@@ -108,6 +108,29 @@ class User(BaseEntity):
     def verify_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+    @property
+    def has_full_profile(self):
+        """True when the account has every student detail (coaches may only have a few)."""
+        return bool(self.profile) and all(key in self.profile for key in PROFILE_FIELDS)
+
+
+class CoachApplication(BaseEntity):
+    """A coach sign-up waiting for admin approval. It is NOT an account until approved."""
+
+    def __init__(self, application_id, username, password_hash, first_name, surname, age, gender):
+        super().__init__(application_id)
+        self.username = username
+        self.password_hash = password_hash
+        self.first_name = first_name
+        self.surname = surname
+        self.age = age
+        self.gender = gender
+        self.submitted = datetime.now()
+
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.surname}"
+
 
 class Player(BaseEntity):
     def __init__(self, player_id, first_name, surname, age, gender, course, set_name, year, sport, position, owner_id, height=None):
@@ -154,6 +177,8 @@ class CKCMSportsSystem:
         self.next_user_id = 1
         self.next_player_id = 1
         self.next_announcement_id = 1
+        self.coach_applications = []
+        self.next_application_id = 1
         self.last_submission_date = date(2027, 9, 30)
         self._create_admin()
 
@@ -170,6 +195,8 @@ class CKCMSportsSystem:
             raise ValueError("Username is required.")
         if any(user.username.lower() == username.lower() for user in self.users):
             raise ValueError("Username already exists.")
+        if any(a.username.lower() == username.lower() for a in self.coach_applications):
+            raise ValueError("That username is awaiting coach approval.")
         if len(password or "") < 6:
             raise ValueError("Password must be at least 6 characters.")
         # CKCM admin accounts use the explicit admin_ username convention.
@@ -184,6 +211,73 @@ class CKCMSportsSystem:
         self.next_user_id += 1
         self.users.append(user)
         return user
+
+    def apply_coach(self, username, password, first_name, surname, age, gender):
+        """Store a coach application. No account is created until an admin approves it."""
+        username = (username or "").strip()
+        if not username:
+            raise ValueError("Username is required.")
+        if username.lower().startswith("admin_"):
+            raise ValueError("That username is reserved. Please choose another.")
+        if any(u.username.lower() == username.lower() for u in self.users) or any(
+            a.username.lower() == username.lower() for a in self.coach_applications
+        ):
+            raise ValueError("Username already exists.")
+        if len(password or "") < 6:
+            raise ValueError("Password must be at least 6 characters.")
+        first_name, surname = (first_name or "").strip(), (surname or "").strip()
+        if not first_name or not surname or not str(age or "").strip() or not gender:
+            raise ValueError("Please complete all fields.")
+        try:
+            age = int(age)
+        except (TypeError, ValueError):
+            raise ValueError("Age must be a number.")
+        if age < 18 or age > 99:
+            raise ValueError("Coaches must be between 18 and 99 years old.")
+        if gender not in {"Male", "Female"}:
+            raise ValueError("Select Male or Female.")
+        application = CoachApplication(
+            self.next_application_id, username, generate_password_hash(password), first_name, surname, age, gender
+        )
+        self.next_application_id += 1
+        self.coach_applications.append(application)
+        return application
+
+    def get_application(self, application_id):
+        return next((a for a in self.coach_applications if a.id == application_id), None)
+
+    def pending_application(self, username, password):
+        """The waiting application for these credentials, if any (used for a friendly login message)."""
+        username = (username or "").strip().lower()
+        return next(
+            (a for a in self.coach_applications
+             if a.username.lower() == username and check_password_hash(a.password_hash, password or "")),
+            None,
+        )
+
+    def approve_coach(self, application_id):
+        application = self.get_application(application_id)
+        if not application:
+            raise ValueError("Application not found.")
+        if any(u.username.lower() == application.username.lower() for u in self.users):
+            raise ValueError("Username already exists.")
+        user = User(self.next_user_id, application.username, "placeholder", "coach")
+        user.password_hash = application.password_hash
+        user.profile = {
+            "first_name": application.first_name, "surname": application.surname,
+            "age": application.age, "gender": application.gender,
+        }
+        self.next_user_id += 1
+        self.users.append(user)
+        self.coach_applications.remove(application)
+        return user
+
+    def reject_coach(self, application_id):
+        application = self.get_application(application_id)
+        if not application:
+            raise ValueError("Application not found.")
+        self.coach_applications.remove(application)
+        return application
 
     def authenticate(self, username, password):
         username = (username or "").strip()
@@ -210,7 +304,7 @@ class CKCMSportsSystem:
     def add_player(self, owner_id, sport, position, height):
         """Register an account in a sport. Personal details come from the account itself."""
         owner = self.get_user(owner_id)
-        if not owner or not owner.profile:
+        if not owner or not owner.has_full_profile:
             raise ValueError("Please complete your account details first.")
         self._validate_player_fields(sport, position, height)
         if self.player_for_owner(owner_id, sport):
@@ -475,13 +569,35 @@ def register():
     return render_template("register.html", form=request.form)
 
 
+@app.route("/register/coach", methods=["GET", "POST"])
+def register_coach():
+    if current_user():
+        return redirect(url_for("admin_dashboard" if is_admin_user(current_user()) else "student_home"))
+    if request.method == "POST":
+        try:
+            if request.form.get("password", "") != request.form.get("confirm_password", ""):
+                raise ValueError("Passwords do not match.")
+            application = system.apply_coach(
+                request.form.get("username", ""), request.form.get("password", ""),
+                request.form.get("first_name", ""), request.form.get("surname", ""),
+                request.form.get("age", ""), request.form.get("gender", ""),
+            )
+            flash(f"Thanks {application.first_name}! Your coach application was sent. You can sign in once an admin approves it.", "success")
+            return redirect(url_for("login"))
+        except ValueError as exc:
+            flash(str(exc), "error")
+    return render_template("register_coach.html", form=request.form)
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if current_user():
         return redirect(url_for("admin_dashboard" if is_admin_user(current_user()) else "student_home"))
     if request.method == "POST":
         user = system.authenticate(request.form.get("username", ""), request.form.get("password", ""))
-        if not user:
+        if not user and system.pending_application(request.form.get("username", ""), request.form.get("password", "")):
+            flash("Your coach application is still waiting for admin approval. You can sign in once it is approved.", "info")
+        elif not user:
             flash("Invalid username or password.", "error")
         else:
             session["user_id"] = user.id
@@ -621,7 +737,7 @@ def new_player(sport):
     if existing:
         flash(f"You are already registered in {SPORTS[sport]['name']}. You can edit your details here.", "info")
         return redirect(url_for("edit_player", player_id=existing.id))
-    if not user.profile:
+    if not user.has_full_profile:
         flash("Please complete your account details before joining a sport.", "info")
         return redirect(url_for("account_details", next=request.path))
     if request.method == "POST":
@@ -738,6 +854,14 @@ def admin_users():
                     request.form.get("role", "student"),
                 )
                 flash(f"Account {new_user.username} added as {'Admin' if is_admin_user(new_user) else 'Student'}.", "success")
+                return redirect(url_for("admin_users"))
+            elif action == "approve_coach":
+                user = system.approve_coach(int(request.form.get("application_id", "0")))
+                flash(f"{user.username} was approved as a coach and can now sign in.", "success")
+                return redirect(url_for("admin_users"))
+            elif action == "reject_coach":
+                application = system.reject_coach(int(request.form.get("application_id", "0")))
+                flash(f"The coach application from {application.username} was rejected.", "success")
                 return redirect(url_for("admin_users"))
             elif action == "role":
                 user = system.get_user(int(request.form.get("user_id", "0")))
