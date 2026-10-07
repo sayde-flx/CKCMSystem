@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Coach application{% endblock %}
+{% block content %}
+<section class="auth auth-wide card"><span class="eyebrow">CKCM</span><h1>Create account</h1>
+{% with kind='coach' %}{% include '_register_tabs.html' %}{% endwith %}
+<p class="coach-note">Coach accounts need admin approval. Your account is <strong>not created until an admin approves it</strong>, and you won't be able to sign in before then.</p>
+<form method="post" class="form">
+  <div class="form-grid">
+    <label>Username<input name="username" value="{{ form.username or '' }}" autocomplete="username" required></label>
+    <label>Password<input name="password" type="password" minlength="6" autocomplete="new-password" required></label>
+    <label>Confirm password<input name="confirm_password" type="password" minlength="6" autocomplete="new-password" required></label>
+  </div>
+  <h2 class="form-section">Coach details</h2>
+  <div class="form-grid">
+    <label>First name<input name="first_name" value="{{ form.first_name or '' }}" required></label>
+    <label>Surname<input name="surname" value="{{ form.surname or '' }}" required></label>
+    <label>Age<input name="age" type="number" min="18" max="99" value="{{ form.age or '' }}" required></label>
+    <label>Gender<select name="gender" required><option value="">Select</option>{% for g in ['Male','Female'] %}<option value="{{ g }}" {% if form.gender == g %}selected{% endif %}>{{ g }}</option>{% endfor %}</select></label>
+  </div>
+  <div class="actions"><button class="btn primary" type="submit">Submit application</button><a class="btn secondary" href="{{ url_for('login') }}">Back</a></div>
+</form></section>
+{% endblock %}

@@ -1,0 +1,4 @@
+<nav class="reg-tabs" aria-label="Account type">
+  <a class="{{ 'active' if kind == 'student' }}" href="{{ url_for('register') }}">Student</a>
+  <a class="{{ 'active' if kind == 'coach' }}" href="{{ url_for('register_coach') }}">Coach</a>
+</nav>
