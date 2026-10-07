@@ -1,15 +1,17 @@
 {% extends 'base.html' %}
 {% block title %}User Management{% endblock %}
 {% block content %}
+{% include '_manage_nav.html' %}
 <section class="page-head admin-page-head"><span class="eyebrow">USER MANAGEMENT</span><h1>Accounts &amp; Roles</h1><p>Manage CKCM accounts and permissions.</p></section>
 
 <section class="card panel admin-form-panel">
   <div class="panel-title"><div><span class="eyebrow">ADD ACCOUNT</span><h2>New user</h2></div></div>
   <form class="form-grid" method="post">
     <input type="hidden" name="action" value="add">
-    <label>Username<input name="username" required></label>
-    <label>Password<input name="password" type="password" minlength="6" required></label>
-    <label>Role<select name="role"><option value="student">Student</option><option value="admin">Admin</option></select></label>
+    <label>Username<input name="username" value="{{ form_values.username }}" autocomplete="off" required></label>
+    <label>Password<input name="password" type="password" minlength="6" autocomplete="new-password" required></label>
+    <label>Confirm password<input name="confirm_password" type="password" minlength="6" autocomplete="new-password" required></label>
+    <label>Role<select name="role"><option value="student" {{ 'selected' if form_values.role != 'admin' else '' }}>Student</option><option value="admin" {{ 'selected' if form_values.role == 'admin' else '' }}>Admin</option></select></label>
     <div class="form-submit"><button class="btn primary" type="submit">Add user</button></div>
   </form>
   <p class="form-note">Usernames beginning with <b>admin_</b> are automatically treated as admin accounts.</p>
