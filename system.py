@@ -350,6 +350,21 @@ def admin_required(view):
     return wrapped
 
 
+def is_coach_user(user):
+    return bool(user) and user.role == "coach" and not is_admin_user(user)
+
+
+def staff_required(view):
+    """Admins and coaches (used for player management)."""
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        user = current_user()
+        if not (is_admin_user(user) or is_coach_user(user)):
+            abort(403)
+        return view(*args, **kwargs)
+    return wrapped
+
+
 @app.context_processor
 def inject_globals():
     user = current_user()
@@ -360,7 +375,7 @@ def inject_globals():
         "my_players": system.players_for_owner(user.id) if user else [],
         "my_player_ids": {p.id for p in system.players_for_owner(user.id)} if user else set(),
         "is_admin": is_admin_user(user),
-        "is_coach": bool(user) and user.role == "coach",
+        "is_coach": is_coach_user(user),
         "today": date.today(),
         "system": system,
     }
@@ -557,7 +572,8 @@ def edit_player(player_id):
     if not player:
         abort(404)
     user = current_user()
-    if not is_admin_user(user) and player.owner_id != user.id:
+    coach = is_coach_user(user)
+    if not is_admin_user(user) and not coach and player.owner_id != user.id:
         abort(403)
     if request.method == "POST":
         try:
@@ -570,11 +586,12 @@ def edit_player(player_id):
                 course=request.form.get("course", ""),
                 set_name=request.form.get("set_name", ""),
                 year=request.form.get("year", ""),
-                sport=request.form.get("sport", ""),
+                # Coaches can change a position but never the sport.
+                sport=player.sport if coach else request.form.get("sport", ""),
                 position=request.form.get("position", ""),
             )
             flash("Player profile saved successfully.", "success")
-            destination = url_for("admin_players") if is_admin_user(user) else url_for("student_home")
+            destination = url_for("admin_players") if (is_admin_user(user) or coach) else url_for("student_home")
             return redirect(destination)
         except ValueError as exc:
             flash(str(exc), "error")
@@ -691,7 +708,7 @@ def admin_sports():
 
 @app.route("/admin/players")
 @login_required
-@admin_required
+@staff_required
 def admin_players():
     players = sorted(system.players, key=lambda p: (p.surname.lower(), p.first_name.lower()))
     return render_template("admin_players.html", players=players)
@@ -859,7 +876,7 @@ def admin_announcements():
 
 @app.post("/admin/player/<int:player_id>/delete")
 @login_required
-@admin_required
+@staff_required
 def delete_player(player_id):
     try:
         system.delete_player(player_id)
