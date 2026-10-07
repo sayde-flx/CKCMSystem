@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
 {% block title %}Create account{% endblock %}
 {% block content %}
-<section class="auth auth-wide card"><span class="eyebrow">CKCM</span><h1>Create account</h1><p>Set up your login and personal details once. You only choose your sport, position and height when you join a team.</p>
+<section class="auth auth-wide card"><span class="eyebrow">CKCM</span><h1>Create account</h1>
+{% with kind='student' %}{% include '_register_tabs.html' %}{% endwith %}
+<p>Set up your login and personal details once. You only choose your sport, position and height when you join a team.</p>
 <form method="post" class="form">
   <div class="form-grid">
     <label>Username<input name="username" value="{{ form.username or '' }}" autocomplete="username" required></label>
