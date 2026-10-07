@@ -4,6 +4,23 @@
 {% include '_manage_nav.html' %}
 <section class="page-head admin-page-head"><span class="eyebrow">USER MANAGEMENT</span><h1>Accounts &amp; Roles</h1><p>Manage CKCM accounts and permissions.</p></section>
 
+<section class="card panel">
+  <div class="panel-title"><div><span class="eyebrow">COACH APPLICATIONS</span><h2>Awaiting approval</h2></div><span class="panel-chip">{{ system.coach_applications|length }} pending</span></div>
+  {% if system.coach_applications %}
+  <div class="table-wrap"><table><thead><tr><th>Name</th><th>Username</th><th>Age</th><th>Gender</th><th>Applied</th><th>Commands</th></tr></thead><tbody>
+  {% for a in system.coach_applications %}
+  <tr>
+    <td><strong>{{ a.full_name }}</strong></td><td>{{ a.username }}</td><td>{{ a.age }}</td><td>{{ a.gender }}</td><td>{{ a.submitted.strftime('%b %d, %Y') }}</td>
+    <td>
+      <form class="inline" method="post"><input type="hidden" name="action" value="approve_coach"><input type="hidden" name="application_id" value="{{ a.id }}"><button class="table-link button-link" type="submit">Approve</button></form>
+      <form class="inline" method="post" data-confirm="Reject this coach application?"><input type="hidden" name="action" value="reject_coach"><input type="hidden" name="application_id" value="{{ a.id }}"><button class="table-danger" type="submit">Reject</button></form>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody></table></div>
+  {% else %}<p class="muted">No coach applications are waiting.</p>{% endif %}
+</section>
+
 <section class="card panel admin-form-panel">
   <div class="panel-title"><div><span class="eyebrow">ADD ACCOUNT</span><h2>New user</h2></div></div>
   <form class="form-grid" method="post">
