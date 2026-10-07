@@ -65,7 +65,7 @@ img{max-width:100%;display:block}
 
 /* Layout */
 .page{width:100%;max-width:none;margin:0;padding:2rem clamp(1rem,3vw,2.5rem) 4rem;display:flex;flex-direction:column;gap:1.5rem;flex:1}
-.site-footer{background:var(--ink);border-top:4px solid var(--brand);padding:1.4rem;text-align:center;font-size:.8rem;color:rgba(255,255,255,.7)}
+.site-footer{background:#1c1411;border-top:4px solid var(--brand);padding:1.4rem;text-align:center;font-size:.8rem;color:rgba(255,255,255,.7)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
 .panel{padding:1.5rem}
 .eyebrow{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);margin-bottom:.5rem}
@@ -347,3 +347,11 @@ tr.is-me td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 .manage-tabs a{padding:.6rem 1rem;border-radius:10px;font-weight:700;font-size:.9rem;color:var(--muted);white-space:nowrap;transition:background .15s,color .15s}
 .manage-tabs a:hover{background:var(--brand-tint);color:var(--brand-dark)}
 .manage-tabs a.active{background:var(--brand);color:#fff;box-shadow:0 4px 12px rgba(234,88,12,.25)}
+
+/* Dark-mode fixes: keep pale badges/alerts from glaring on dark pages */
+[data-theme="dark"] .role-badge.admin{background:#4a3410;color:#fde68a}
+[data-theme="dark"] .role-badge.coach{background:#14532d;color:#bbf7d0}
+[data-theme="dark"] .alert{background:#14532d;color:#bbf7d0}
+[data-theme="dark"] .alert span{color:#bbf7d0}
+[data-theme="dark"] .alert.danger{background:#4c1d1d;color:#fecaca}
+[data-theme="dark"] .alert.danger span{color:#fecaca}
