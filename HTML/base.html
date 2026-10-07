@@ -51,6 +51,11 @@
         <a class="{{ 'active' if ep == 'dashboard' }}" href="{{ url_for('dashboard') }}">Dashboard</a>
         <a class="{{ 'active' if ep.startswith('admin_') and ep != 'admin_dashboard' }}" href="{{ url_for('admin_players') }}">Manage</a>
         <a class="{{ 'active' if ep == 'profile' }}" href="{{ url_for('profile') }}">Profile</a>
+      {% elif is_coach %}
+        <a class="{{ 'active' if ep == 'student_home' }}" href="{{ url_for('student_home') }}">Home</a>
+        <a class="{{ 'active' if ep in ['sports_home','sport_roster'] }}" href="{{ url_for('sports_home') }}">Sports</a>
+        <a class="{{ 'active' if ep in ['admin_players','edit_player'] }}" href="{{ url_for('admin_players') }}">Players</a>
+        <a class="{{ 'active' if ep == 'announcements' }}" href="{{ url_for('announcements') }}">Announcements</a>
       {% else %}
         <a class="{{ 'active' if ep == 'student_home' }}" href="{{ url_for('student_home') }}">Home</a>
         <a class="{{ 'active' if ep in ['sports_home','sport_roster'] }}" href="{{ url_for('sports_home') }}">Sports</a>
