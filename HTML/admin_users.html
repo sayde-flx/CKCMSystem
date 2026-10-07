@@ -11,7 +11,7 @@
     <label>Username<input name="username" value="{{ form_values.username }}" autocomplete="off" required></label>
     <label>Password<input name="password" type="password" minlength="6" autocomplete="new-password" required></label>
     <label>Confirm password<input name="confirm_password" type="password" minlength="6" autocomplete="new-password" required></label>
-    <label>Role<select name="role"><option value="student" {{ 'selected' if form_values.role != 'admin' else '' }}>Student</option><option value="admin" {{ 'selected' if form_values.role == 'admin' else '' }}>Admin</option></select></label>
+    <label>Role<select name="role"><option value="student" {{ 'selected' if form_values.role not in ['coach','admin'] else '' }}>Student</option><option value="coach" {{ 'selected' if form_values.role == 'coach' else '' }}>Coach</option><option value="admin" {{ 'selected' if form_values.role == 'admin' else '' }}>Admin</option></select></label>
     <div class="form-submit"><button class="btn primary" type="submit">Add user</button></div>
   </form>
   <p class="form-note">Usernames beginning with <b>admin_</b> are automatically treated as admin accounts.</p>
@@ -23,11 +23,12 @@
   {% for user in users %}
   <tr>
     <td><strong>{{ user.username }}</strong></td>
-    <td><span class="role-badge {{ 'admin' if user.role == 'admin' or user.username.lower().startswith('admin_') else 'student' }}">{{ 'Admin' if user.role == 'admin' or user.username.lower().startswith('admin_') else 'Student' }}</span></td>
+    {% set urole = 'admin' if user.role == 'admin' or user.username.lower().startswith('admin_') else user.role %}
+    <td><span class="role-badge {{ urole }}">{{ urole|capitalize }}</span></td>
     <td>{% set n = system.players_for_owner(user.id)|length %}{{ n ~ (' sport' if n == 1 else ' sports') if n else 'No profile' }}</td>
     <td>
       {% if user.id != current_user.id %}
-      <form class="inline admin-inline-form" method="post"><input type="hidden" name="action" value="role"><input type="hidden" name="user_id" value="{{ user.id }}"><select name="role" aria-label="Role for {{ user.username }}"><option value="student" {{ 'selected' if user.role != 'admin' else '' }}>Student</option><option value="admin" {{ 'selected' if user.role == 'admin' else '' }}>Admin</option></select><button class="table-link button-link" type="submit">Save role</button></form>
+      <form class="inline admin-inline-form" method="post"><input type="hidden" name="action" value="role"><input type="hidden" name="user_id" value="{{ user.id }}"><select name="role" aria-label="Role for {{ user.username }}"><option value="student" {{ 'selected' if urole == 'student' else '' }}>Student</option><option value="coach" {{ 'selected' if urole == 'coach' else '' }}>Coach</option><option value="admin" {{ 'selected' if urole == 'admin' else '' }}>Admin</option></select><button class="table-link button-link" type="submit">Save role</button></form>
       <form class="inline" method="post" data-confirm="Remove this user account and their player profile?"><input type="hidden" name="action" value="delete"><input type="hidden" name="user_id" value="{{ user.id }}"><button class="table-danger" type="submit">Remove</button></form>
       {% else %}<span class="muted-label">Current account</span>{% endif %}
     </td>
