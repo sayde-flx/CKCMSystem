@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Manage sports{% endblock %}
+{% block content %}
+{% include '_manage_nav.html' %}
+<section class="page-head admin-page-head"><span class="eyebrow">SPORTS MANAGEMENT</span><h1>Manage sports</h1><p>Add new sports, edit their positions, or remove sports that have no players.</p></section>
+
+<section class="card panel admin-form-panel">
+  <div class="panel-title"><div><span class="eyebrow">ADD SPORT</span><h2>New sport</h2></div></div>
+  <form class="form" method="post">
+    <input type="hidden" name="action" value="add">
+    <div class="form-grid">
+      <label>Sport name<input name="name" maxlength="40" placeholder="e.g. Table Tennis" required></label>
+      <label>Positions<textarea name="positions" rows="3" placeholder="One per line or separated by commas, e.g. Singles, Doubles" required></textarea></label>
+    </div>
+    <div class="actions"><button class="btn primary" type="submit">Add sport</button></div>
+  </form>
+</section>
+
+<section class="card panel">
+  <div class="panel-title"><div><span class="eyebrow">ALL SPORTS</span><h2>Current sports</h2></div><span class="panel-chip">{{ sports|length }} total</span></div>
+  <div class="table-wrap"><table><thead><tr><th>Sport</th><th>Players</th><th>Positions (one per line)</th><th>Commands</th></tr></thead><tbody>
+  {% for key, info in sports.items() %}
+  {% set count = system.players_for_sport(key)|length %}
+  <tr>
+    <td><strong>{{ info.name }}</strong></td>
+    <td>{{ count }}</td>
+    <td>
+      <form class="inline admin-inline-form" method="post">
+        <input type="hidden" name="action" value="positions"><input type="hidden" name="sport" value="{{ key }}">
+        <textarea name="positions" rows="{{ [info.positions|length, 2]|max }}" style="min-height:0;min-width:200px" aria-label="Positions for {{ info.name }}">{{ info.positions|join('\n') }}</textarea>
+        <button class="table-link" type="submit">Save</button>
+      </form>
+    </td>
+    <td>
+      <a class="table-link" href="{{ url_for('sport_roster', sport=key) }}">View</a>
+      <form class="inline" method="post" data-confirm="Remove {{ info.name }}?">
+        <input type="hidden" name="action" value="delete"><input type="hidden" name="sport" value="{{ key }}">
+        <button class="table-danger" type="submit" {{ 'disabled title="Has players"' if count else '' }}>Remove</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}

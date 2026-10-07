@@ -10,7 +10,7 @@
 {% for key, info in sports.items() %}
   {% set reg = mine.get(key) %}
   <a class="card sport-card" href="{{ url_for('edit_player', player_id=reg.id) if reg else url_for('new_player', sport=key) }}">
-    <span class="sport-number">0{{ loop.index }}</span>
+    <span class="sport-number">{{ '%02d'|format(loop.index) }}</span>
     <span>{{ info.name }}</span>
     <small class="sport-choice-meta">{{ info.positions|join(' · ') }}</small>
     {% if reg %}<span class="status ok">Registered &middot; {{ reg.position }}</span><b>Edit &rarr;</b>{% else %}<b>Join &rarr;</b>{% endif %}

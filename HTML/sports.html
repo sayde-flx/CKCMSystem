@@ -11,7 +11,7 @@
 {% for key, info in sports.items() %}
   {% set count = system.players_for_sport(key)|length %}
   <a class="card sport-choice" href="{{ url_for('sport_roster', sport=key) }}">
-    <span class="sport-number">0{{ loop.index }}</span>
+    <span class="sport-number">{{ '%02d'|format(loop.index) }}</span>
     <span class="sport-choice-name">{{ info.name }}</span>
     <span class="sport-choice-meta">{{ count }} player{{ '' if count == 1 else 's' }} &middot; {{ info.positions|length }} positions</span>
     <span class="sport-choice-action">View players &rarr;</span>
