@@ -2,17 +2,18 @@
 {% block title %}Player profile{% endblock %}
 {% block content %}
 <section class="page-head">
-  <span class="eyebrow">Player profile &middot; Step 1 of 2 &middot; <span class="status warn">Not submitted</span></span>
-  <h1>Choose your sport</h1>
-  <p>Pick the sport you want to play. You&apos;ll fill in your details next. Deadline: {{ system_deadline.strftime('%B %d, %Y') }}.</p>
+  <span class="eyebrow">Player registration &middot; {{ mine|length }} of {{ sports|length }} sports registered</span>
+  <h1>{{ 'Your sports' if mine else 'Choose your sport' }}</h1>
+  <p>You can register in more than one sport. Pick a new sport to join it, or open a registered one to edit your details. Deadline: {{ system_deadline.strftime('%B %d, %Y') }}.</p>
 </section>
 <div class="sports-grid">
 {% for key, info in sports.items() %}
-  <a class="card sport-card" href="{{ url_for('new_player', sport=key) }}">
+  {% set reg = mine.get(key) %}
+  <a class="card sport-card" href="{{ url_for('edit_player', player_id=reg.id) if reg else url_for('new_player', sport=key) }}">
     <span class="sport-number">0{{ loop.index }}</span>
     <span>{{ info.name }}</span>
     <small class="sport-choice-meta">{{ info.positions|join(' · ') }}</small>
-    <b>Select &rarr;</b>
+    {% if reg %}<span class="status ok">Registered &middot; {{ reg.position }}</span><b>Edit &rarr;</b>{% else %}<b>Join &rarr;</b>{% endif %}
   </a>
 {% endfor %}
 </div>

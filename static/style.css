@@ -28,7 +28,7 @@ img{max-width:100%;display:block}
 
 /* Header */
 .site-header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.88);backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--line);border-top:4px solid var(--brand)}
-.nav{max-width:1180px;margin:0 auto;padding:.7rem 1.25rem;display:flex;align-items:center;gap:1rem}
+.nav{width:100%;max-width:none;margin:0;padding:.7rem clamp(1rem,3vw,2.5rem);display:flex;align-items:center;gap:1rem}
 .brand{display:flex;align-items:center;gap:.7rem;margin-right:auto}
 .brand strong{display:block;font-size:1rem;font-weight:800;letter-spacing:.04em;color:var(--brand)}
 .brand span{display:block;font-size:.75rem;color:var(--muted)}
@@ -64,7 +64,7 @@ img{max-width:100%;display:block}
 .nav-links a.logout:hover{background:#fdeeee}
 
 /* Layout */
-.page{width:100%;max-width:1180px;margin:0 auto;padding:2rem 1.25rem 4rem;display:flex;flex-direction:column;gap:1.5rem;flex:1}
+.page{width:100%;max-width:none;margin:0;padding:2rem clamp(1rem,3vw,2.5rem) 4rem;display:flex;flex-direction:column;gap:1.5rem;flex:1}
 .site-footer{background:var(--ink);border-top:4px solid var(--brand);padding:1.4rem;text-align:center;font-size:.8rem;color:rgba(255,255,255,.7)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
 .panel{padding:1.5rem}
@@ -314,7 +314,14 @@ tr.is-me td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 [data-accent="gold"]{--brand:#c98a06;--brand-dark:#a16207;--brand-soft:#fef3c7;--brand-tint:#fffbeb}
 [data-accent="blue"]{--brand:#2563eb;--brand-dark:#1d4ed8;--brand-soft:#dbeafe;--brand-tint:#eff6ff}
 [data-accent="purple"]{--brand:#7c3aed;--brand-dark:#6d28d9;--brand-soft:#ede9fe;--brand-tint:#f5f3ff}
-.welcome-only{justify-content:center;text-align:center;min-height:14rem}
+.welcome-only{justify-content:center;text-align:center;min-height:14rem;flex:1;border-radius:0;box-shadow:none;background:radial-gradient(circle at 80% 20%,rgba(245,183,46,.25),transparent 45%),var(--hero-grad)}
+.welcome-only h1{font-size:clamp(2.4rem,6vw,4.5rem)}
+/* Full-screen welcome: remove page padding/gap so the banner touches the nav and footer */
+.page:has(> .welcome-only){padding:0;gap:0}
+/* Landing hero spans the full width as well */
+.page:has(> .hero){padding:0 0 4rem;gap:2rem}
+.page:has(> .hero) > .hero{border-radius:0;min-height:clamp(380px,62vh,640px);padding-inline:clamp(1rem,6vw,6rem)}
+.page:has(> .hero) > .feature-grid{padding-inline:clamp(1rem,3vw,2.5rem)}
 
 /* Dark theme */
 [data-theme="dark"]{--bg:#120d0b;--surface:#1c1512;--ink:#f6ede6;--muted:#b3a399;--line:#33271f;--brand-soft:color-mix(in srgb,var(--brand) 22%,#1c1512);--brand-tint:color-mix(in srgb,var(--brand) 12%,#1c1512);--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);color-scheme:dark}

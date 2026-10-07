@@ -150,14 +150,22 @@ class CKCMSportsSystem:
     def get_player(self, player_id):
         return next((p for p in self.players if p.id == player_id), None)
 
-    def player_for_owner(self, owner_id):
-        return next((p for p in self.players if p.owner_id == owner_id), None)
+    def players_for_owner(self, owner_id):
+        """All player profiles (one per sport) registered by an account."""
+        return [p for p in self.players if p.owner_id == owner_id]
+
+    def player_for_owner(self, owner_id, sport=None):
+        """First profile of an account, or the profile for a specific sport."""
+        return next(
+            (p for p in self.players if p.owner_id == owner_id and (sport is None or p.sport == sport)),
+            None,
+        )
 
     def add_player(self, **data):
         owner_id = data["owner_id"]
-        if self.player_for_owner(owner_id):
-            raise ValueError("This account already has a player profile.")
         self._validate_player(data)
+        if self.player_for_owner(owner_id, data["sport"]):
+            raise ValueError("This account is already registered in that sport.")
         player = Player(
             self.next_player_id,
             data["first_name"], data["surname"], data["age"], data["gender"],
@@ -173,6 +181,9 @@ class CKCMSportsSystem:
         if not player:
             raise ValueError("Player not found.")
         self._validate_player(data)
+        clash = self.player_for_owner(player.owner_id, data["sport"])
+        if clash and clash.id != player.id:
+            raise ValueError("This account is already registered in that sport.")
         player.first_name = data["first_name"].strip()
         player.surname = data["surname"].strip()
         player.age = int(data["age"])
@@ -284,7 +295,8 @@ def inject_globals():
         "current_user": user,
         "sports": SPORTS,
         "system_deadline": system.last_submission_date,
-        "my_player": system.player_for_owner(user.id) if user else None,
+        "my_players": system.players_for_owner(user.id) if user else [],
+        "my_player_ids": {p.id for p in system.players_for_owner(user.id)} if user else set(),
         "is_admin": is_admin_user(user),
         "today": date.today(),
         "system": system,
@@ -425,9 +437,8 @@ def dashboard_delete_user():
 def new_player_start():
     if is_admin_user(current_user()):
         return redirect(url_for("admin_players"))
-    if system.player_for_owner(current_user().id):
-        return redirect(url_for("edit_my_player"))
-    return render_template("choose_sport.html")
+    mine = {p.sport: p for p in system.players_for_owner(current_user().id)}
+    return render_template("choose_sport.html", mine=mine)
 
 
 @app.route("/player/new/<sport>", methods=["GET", "POST"])
@@ -438,8 +449,12 @@ def new_player(sport):
         return redirect(url_for("admin_players"))
     if sport not in SPORTS:
         abort(404)
-    if system.player_for_owner(user.id):
-        return redirect(url_for("edit_my_player"))
+    existing = system.player_for_owner(user.id, sport)
+    if existing:
+        flash(f"You are already registered in {SPORTS[sport]['name']}. You can edit your details here.", "info")
+        return redirect(url_for("edit_player", player_id=existing.id))
+    # Reuse personal details from an existing registration so the form is quick to fill.
+    template_player = system.player_for_owner(user.id)
     if request.method == "POST":
         try:
             if date.today() > system.last_submission_date:
@@ -460,16 +475,16 @@ def new_player(sport):
             return redirect(url_for("sport_roster", sport=player.sport))
         except ValueError as exc:
             flash(str(exc), "error")
-    return render_template("player_form.html", player=None, title="Player profile", sport=sport, info=SPORTS[sport])
+    return render_template("player_form.html", player=None, prefill=template_player, title="Player profile", sport=sport, info=SPORTS[sport])
 
 
 @app.route("/player/me/edit", methods=["GET", "POST"])
 @login_required
 def edit_my_player():
-    player = system.player_for_owner(current_user().id)
-    if not player:
-        return redirect(url_for("new_player_start"))
-    return edit_player(player.id)
+    mine = system.players_for_owner(current_user().id)
+    if len(mine) == 1:
+        return edit_player(mine[0].id)
+    return redirect(url_for("new_player_start"))
 
 
 @app.route("/player/<int:player_id>/edit", methods=["GET", "POST"])
@@ -585,20 +600,130 @@ def admin_players():
     return render_template("admin_players.html", players=players)
 
 
+REPORT_COLUMNS = ["No.", "First Name", "Surname", "Age", "Course / Year", "Set", "Position", "Owner Username"]
+
+
+def _report_groups():
+    """Players grouped as {sport: {department: {gender: [players]}}}.
+
+    Department is the player's course. Everything is sorted so the export
+    is stable: sport order, then department A-Z, then Female before Male.
+    """
+    groups = {}
+    for key in SPORTS:
+        rows = system.players_for_sport(key)
+        by_dept = {}
+        for p in rows:
+            dept = p.course.strip().upper() or "UNSPECIFIED"
+            by_dept.setdefault(dept, {"Female": [], "Male": []})[p.gender].append(p)
+        groups[key] = dict(sorted(by_dept.items()))
+    return groups
+
+
+def _report_row(index, p):
+    owner = system.get_user(p.owner_id)
+    return [index, p.first_name, p.surname, p.age, f"{p.course} - {p.year}", p.set_name, p.position,
+            owner.username if owner else ""]
+
+
 @app.route("/admin/reports/export")
 @login_required
 @admin_required
 def export_player_report():
+    """Excel report: one sheet per sport, split by department, then Female / Male."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    title_font = Font(bold=True, size=14, color="FFFFFF")
+    title_fill = PatternFill("solid", fgColor="EA580C")
+    dept_font = Font(bold=True, size=12)
+    dept_fill = PatternFill("solid", fgColor="FFEDD5")
+    gender_font = Font(bold=True, color="C2410C")
+    head_font = Font(bold=True)
+    head_fill = PatternFill("solid", fgColor="F3F4F6")
+
+    wb = Workbook()
+    wb.remove(wb.active)
+    summary = wb.create_sheet("Summary")
+    summary.append(["Sport", "Female", "Male", "Total"])
+    for c in summary[1]:
+        c.font = head_font
+        c.fill = head_fill
+
+    groups = _report_groups()
+    grand_f = grand_m = 0
+    for key, depts in groups.items():
+        info = SPORTS[key]
+        ws = wb.create_sheet(info["name"])
+        ws.append([f"{info['name']} - Player Report"])
+        ws["A1"].font = title_font
+        ws["A1"].fill = title_fill
+        ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(REPORT_COLUMNS))
+        ws.append([])
+        total_f = total_m = 0
+        if not depts:
+            ws.append(["No players registered yet."])
+        for dept, genders in depts.items():
+            ws.append([f"Department: {dept}"])
+            r = ws.max_row
+            for c in ws[r][:len(REPORT_COLUMNS)]:
+                c.fill = dept_fill
+                c.font = dept_font
+            for gender in ("Female", "Male"):
+                rows = genders[gender]
+                ws.append([f"{gender} ({len(rows)})"])
+                ws.cell(ws.max_row, 1).font = gender_font
+                ws.append(REPORT_COLUMNS)
+                for c in ws[ws.max_row][:len(REPORT_COLUMNS)]:
+                    c.font = head_font
+                    c.fill = head_fill
+                if rows:
+                    for i, p in enumerate(rows, 1):
+                        ws.append(_report_row(i, p))
+                else:
+                    ws.append(["", "No players"])
+                ws.append([])
+            total_f += len(genders["Female"])
+            total_m += len(genders["Male"])
+        for col, width in zip("ABCDEFGH", (6, 16, 18, 7, 24, 10, 18, 20)):
+            ws.column_dimensions[col].width = width
+        ws.column_dimensions["A"].alignment = Alignment(horizontal="left")
+        summary.append([info["name"], total_f, total_m, total_f + total_m])
+        grand_f += total_f
+        grand_m += total_m
+    summary.append(["All sports", grand_f, grand_m, grand_f + grand_m])
+    for c in summary[summary.max_row]:
+        c.font = head_font
+    summary.column_dimensions["A"].width = 20
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    response = app.response_class(
+        buffer.getvalue(),
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response.headers["Content-Disposition"] = "attachment; filename=ckcm_player_report.xlsx"
+    return response
+
+
+@app.route("/admin/reports/export.csv")
+@login_required
+@admin_required
+def export_player_report_csv():
+    """CSV version: same split (sport > department > Female/Male) with section rows."""
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["First Name", "Surname", "Age", "Gender", "Course", "Set", "Year", "Sport", "Position", "Owner Username"])
-    for player in sorted(system.players, key=lambda p: (p.surname.lower(), p.first_name.lower())):
-        owner = system.get_user(player.owner_id)
-        writer.writerow([
-            player.first_name, player.surname, player.age, player.gender, player.course,
-            player.set_name, player.year, SPORTS[player.sport]["name"], player.position,
-            owner.username if owner else "",
-        ])
+    for key, depts in _report_groups().items():
+        for dept, genders in depts.items():
+            for gender in ("Female", "Male"):
+                rows = genders[gender]
+                if not rows:
+                    continue
+                writer.writerow([f"{SPORTS[key]['name']} | Department: {dept} | {gender} ({len(rows)})"])
+                writer.writerow(REPORT_COLUMNS)
+                for i, p in enumerate(rows, 1):
+                    writer.writerow(_report_row(i, p))
+                writer.writerow([])
     response = app.response_class(output.getvalue(), mimetype="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=ckcm_player_report.csv"
     return response

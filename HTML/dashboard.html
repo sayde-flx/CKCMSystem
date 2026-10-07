@@ -52,7 +52,8 @@
     <a href="{{ url_for('admin_deadline') }}"><b>Submission date</b><span>Set the deadline →</span></a>
     <a href="{{ url_for('admin_announcements') }}"><b>Announcements</b><span>Post and manage notices →</span></a>
     <a href="{{ url_for('admin_users') }}"><b>User management</b><span>Manage accounts and roles →</span></a>
-    <a href="{{ url_for('export_player_report') }}"><b>Export report</b><span>Download player data as CSV →</span></a>
+    <a href="{{ url_for('export_player_report') }}"><b>Export report</b><span>Excel file, split by sport, department &amp; Female/Male →</span></a>
+    <a href="{{ url_for('export_player_report_csv') }}"><b>Export report (CSV)</b><span>Same split as plain CSV →</span></a>
   </div>
 </section>
 
@@ -64,7 +65,7 @@
   <tr>
     <td><strong>{{ user.username }}</strong></td>
     <td><span class="role-badge {{ 'admin' if user_is_admin else 'student' }}">{{ 'Admin' if user_is_admin else 'Player' }}</span></td>
-    <td>{{ 'Submitted' if system.player_for_owner(user.id) else 'No profile' }}</td>
+    <td>{% set n = system.players_for_owner(user.id)|length %}{{ n ~ (' sport' if n == 1 else ' sports') if n else 'No profile' }}</td>
     <td>
       {% if user.id != current_user.id %}
       <form class="inline" method="post" action="{{ url_for('dashboard_delete_user') }}" data-confirm="Delete {{ user.username }} and their player profile permanently?" data-loading-text="Deleting...">
