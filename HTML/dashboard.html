@@ -49,6 +49,7 @@
   <div class="panel-title"><div><span class="eyebrow">QUICK SHORTCUTS</span><h2>Admin commands</h2></div></div>
   <div class="shortcut-grid">
     <a href="{{ url_for('admin_players') }}"><b>Players</b><span>Manage submitted profiles →</span></a>
+    <a href="{{ url_for('admin_sports') }}"><b>Manage sports</b><span>Add sports and edit positions →</span></a>
     <a href="{{ url_for('admin_deadline') }}"><b>Submission date</b><span>Set the deadline →</span></a>
     <a href="{{ url_for('admin_announcements') }}"><b>Announcements</b><span>Post and manage notices →</span></a>
     <a href="{{ url_for('admin_users') }}"><b>User management</b><span>Manage accounts and roles →</span></a>
@@ -64,7 +65,7 @@
   {% set user_is_admin = user.role == 'admin' or user.username.lower().startswith('admin_') %}
   <tr>
     <td><strong>{{ user.username }}</strong></td>
-    <td><span class="role-badge {{ 'admin' if user_is_admin else 'student' }}">{{ 'Admin' if user_is_admin else 'Player' }}</span></td>
+    <td><span class="role-badge {{ 'admin' if user_is_admin else user.role }}">{{ 'Admin' if user_is_admin else ('Coach' if user.role == 'coach' else 'Player') }}</span></td>
     <td>{% set n = system.players_for_owner(user.id)|length %}{{ n ~ (' sport' if n == 1 else ' sports') if n else 'No profile' }}</td>
     <td>
       {% if user.id != current_user.id %}
