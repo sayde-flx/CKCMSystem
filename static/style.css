@@ -161,6 +161,7 @@ tr.is-me td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 .role-badge{font-size:.75rem;font-weight:700;padding:.25rem .65rem;border-radius:999px}
 .role-badge.admin{background:#fff3d6;color:#8a5a00}
 .role-badge.student{background:var(--brand-soft);color:var(--brand)}
+.role-badge.coach{background:#e3f4ea;color:#1d6b3f}
 .pill{display:inline-block;font-size:.75rem;font-weight:700;padding:.2rem .6rem;border-radius:999px;background:var(--bg);color:var(--muted);margin-left:.4rem}
 
 /* Sports */
@@ -340,3 +341,9 @@ tr.is-me td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 [data-motion="reduce"] *,[data-motion="reduce"] *::before,[data-motion="reduce"] *::after{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
 @media (prefers-reduced-motion:reduce){.flash{animation:none}}
 .message{max-width:520px;margin:3rem auto;padding:2.5rem;text-align:center;display:flex;flex-direction:column;gap:1rem;align-items:center}
+
+/* Manage sub-navigation */
+.manage-tabs{display:flex;gap:.35rem;padding:.45rem;overflow-x:auto;position:sticky;top:5.2rem;z-index:5}
+.manage-tabs a{padding:.6rem 1rem;border-radius:10px;font-weight:700;font-size:.9rem;color:var(--muted);white-space:nowrap;transition:background .15s,color .15s}
+.manage-tabs a:hover{background:var(--brand-tint);color:var(--brand-dark)}
+.manage-tabs a.active{background:var(--brand);color:#fff;box-shadow:0 4px 12px rgba(234,88,12,.25)}
