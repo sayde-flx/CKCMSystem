@@ -25,15 +25,15 @@
   <div class="panel-title"><h2>{{ label }}</h2><span class="panel-chip">{{ rows|length }}</span></div>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Name</th><th>Surname</th><th>Age</th><th>Course</th><th>Set</th><th>Year</th><th>Position</th></tr></thead>
+      <thead><tr><th>Name</th><th>Surname</th><th>Age</th><th>Height</th><th>Course</th><th>Set</th><th>Year</th><th>Position</th></tr></thead>
       <tbody>
       {% for p in rows %}
         <tr class="roster-row{{ ' is-me' if p.id in my_player_ids }}">
           <td>{{ p.first_name }}{% if p.id in my_player_ids %}<span class="pill">You</span>{% endif %}</td>
-          <td>{{ p.surname }}</td><td>{{ p.age }}</td><td>{{ p.course }}</td><td>{{ p.set_name }}</td><td>{{ p.year }}</td><td>{{ p.position }}</td>
+          <td>{{ p.surname }}</td><td>{{ p.age }}</td><td>{{ (p.height ~ ' cm') if p.height else '—' }}</td><td>{{ p.course }}</td><td>{{ p.set_name }}</td><td>{{ p.year }}</td><td>{{ p.position }}</td>
         </tr>
       {% else %}
-        <tr><td colspan="7" class="empty">No players yet</td></tr>
+        <tr><td colspan="8" class="empty">No players yet</td></tr>
       {% endfor %}
       </tbody>
     </table>

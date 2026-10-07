@@ -359,3 +359,7 @@ tr.is-me td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 [data-theme="dark"] .nav-links a.logout:hover,[data-theme="dark"] .table-danger:hover,[data-theme="dark"] .settings-nav .danger-link:hover{background:#4c1d1d;border-color:#7f1d1d;color:#fecaca}
 [data-theme="dark"] .status-dot.ok{background:#14532d;color:#bbf7d0}
 [data-theme="dark"] .status-dot.warn{background:#4a3410;color:#fde68a}
+
+/* Wider register card + section heading inside forms */
+.auth.auth-wide{max-width:760px}
+.form-section{margin:1.5rem 0 .75rem;font-size:1rem}

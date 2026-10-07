@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}My details{% endblock %}
+{% block content %}
+<section class="page-head"><span class="eyebrow">Account</span><h1>My details</h1><p>These details are used for every sport you join. Changes apply to all your registrations.</p></section>
+<section class="card panel"><form method="post" class="form"><input type="hidden" name="next" value="{{ next }}"><div class="form-grid">{% include '_personal_fields.html' %}</div><div class="actions"><button class="btn primary" type="submit">Save details</button><a class="btn secondary" href="{{ next or (url_for('admin_dashboard') if is_admin else url_for('student_home')) }}">Back</a></div></form></section>
+{% endblock %}

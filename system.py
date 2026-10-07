@@ -66,6 +66,31 @@ def parse_positions(raw):
 
 ROLES = ("student", "coach", "admin")
 
+# Courses offered in the player forms: (code, full name).
+# Edit this list to match the programs offered at CKCM. The code is what gets stored.
+COURSES = [
+    ("BSIT", "BS Information Technology"),
+    ("BSCS", "BS Computer Science"),
+    ("BSIS", "BS Information Systems"),
+    ("BSBA", "BS Business Administration"),
+    ("BSA", "BS Accountancy"),
+    ("BSHM", "BS Hospitality Management"),
+    ("BSTM", "BS Tourism Management"),
+    ("BSN", "BS Nursing"),
+    ("BSED", "BS Secondary Education"),
+    ("BEED", "BS Elementary Education"),
+    ("BSCRIM", "BS Criminology"),
+    ("BSPSY", "BS Psychology"),
+    ("BSCE", "BS Civil Engineering"),
+]
+COURSE_CODES = {code for code, _ in COURSES}
+YEAR_LEVELS = ("1st Year", "2nd Year", "3rd Year", "4th Year")
+
+HEIGHT_MIN_CM, HEIGHT_MAX_CM = 100, 250
+
+# Personal details collected once, when the account is created.
+PROFILE_FIELDS = ("first_name", "surname", "age", "gender", "course", "set_name", "year")
+
 
 class BaseEntity:
     def __init__(self, entity_id):
@@ -78,17 +103,19 @@ class User(BaseEntity):
         self.username = username
         self.password_hash = generate_password_hash(password)
         self.role = role
+        self.profile = None  # personal details dict (see PROFILE_FIELDS), set at registration
 
     def verify_password(self, password):
         return check_password_hash(self.password_hash, password)
 
 
 class Player(BaseEntity):
-    def __init__(self, player_id, first_name, surname, age, gender, course, set_name, year, sport, position, owner_id):
+    def __init__(self, player_id, first_name, surname, age, gender, course, set_name, year, sport, position, owner_id, height=None):
         super().__init__(player_id)
         self.first_name = first_name.strip()
         self.surname = surname.strip()
         self.age = int(age)
+        self.height = int(height) if height not in (None, "") else None  # centimetres
         self.gender = gender
         self.course = course.strip()
         self.set_name = set_name.strip()
@@ -127,7 +154,7 @@ class CKCMSportsSystem:
         self.next_user_id = 1
         self.next_player_id = 1
         self.next_announcement_id = 1
-        self.last_submission_date = date(2026, 9, 30)
+        self.last_submission_date = date(2027, 9, 30)
         self._create_admin()
 
     def _create_admin(self):
@@ -137,7 +164,7 @@ class CKCMSportsSystem:
             "admin",
         )
 
-    def add_user(self, username, password, role="student"):
+    def add_user(self, username, password, role="student", profile=None):
         username = (username or "").strip()
         if not username:
             raise ValueError("Username is required.")
@@ -151,7 +178,9 @@ class CKCMSportsSystem:
             role = "student"
         if username.lower().startswith("admin_"):
             role = "admin"
+        cleaned = self._validate_profile(profile) if profile is not None else None
         user = User(self.next_user_id, username, password, role)
+        user.profile = cleaned
         self.next_user_id += 1
         self.users.append(user)
         return user
@@ -178,38 +207,51 @@ class CKCMSportsSystem:
             None,
         )
 
-    def add_player(self, **data):
-        owner_id = data["owner_id"]
-        self._validate_player(data)
-        if self.player_for_owner(owner_id, data["sport"]):
+    def add_player(self, owner_id, sport, position, height):
+        """Register an account in a sport. Personal details come from the account itself."""
+        owner = self.get_user(owner_id)
+        if not owner or not owner.profile:
+            raise ValueError("Please complete your account details first.")
+        self._validate_player_fields(sport, position, height)
+        if self.player_for_owner(owner_id, sport):
             raise ValueError("This account is already registered in that sport.")
+        pr = owner.profile
         player = Player(
             self.next_player_id,
-            data["first_name"], data["surname"], data["age"], data["gender"],
-            data["course"], data["set_name"], data["year"], data["sport"],
-            data["position"], owner_id,
+            pr["first_name"], pr["surname"], pr["age"], pr["gender"],
+            pr["course"], pr["set_name"], pr["year"], sport,
+            position, owner_id, height,
         )
         self.next_player_id += 1
         self.players.append(player)
         return player
 
-    def update_player(self, player_id, **data):
+    def set_profile(self, user_id, data, current_course=None):
+        """Save an account's personal details and copy them onto all of its player entries."""
+        user = self.get_user(user_id)
+        if not user:
+            raise ValueError("User not found.")
+        cleaned = self._validate_profile(data, current_course=current_course)
+        user.profile = cleaned
+        for p in self.players_for_owner(user_id):
+            p.first_name, p.surname, p.age = cleaned["first_name"], cleaned["surname"], cleaned["age"]
+            p.gender, p.course, p.set_name, p.year = cleaned["gender"], cleaned["course"], cleaned["set_name"], cleaned["year"]
+        return user
+
+    def update_player(self, player_id, position, height, sport=None, profile=None):
         player = self.get_player(player_id)
         if not player:
             raise ValueError("Player not found.")
-        self._validate_player(data)
-        clash = self.player_for_owner(player.owner_id, data["sport"])
+        sport = sport or player.sport
+        self._validate_player_fields(sport, position, height)
+        clash = self.player_for_owner(player.owner_id, sport)
         if clash and clash.id != player.id:
             raise ValueError("This account is already registered in that sport.")
-        player.first_name = data["first_name"].strip()
-        player.surname = data["surname"].strip()
-        player.age = int(data["age"])
-        player.gender = data["gender"]
-        player.course = data["course"].strip()
-        player.set_name = data["set_name"].strip()
-        player.year = data["year"]
-        player.sport = data["sport"]
-        player.position = data["position"]
+        if profile is not None:
+            self.set_profile(player.owner_id, profile, current_course=player.course)
+        player.sport = sport
+        player.position = position
+        player.height = int(height)
         return player
 
     def delete_player(self, player_id):
@@ -300,9 +342,9 @@ class CKCMSportsSystem:
             item.reactions[user_id] = reaction
 
     @staticmethod
-    def _validate_player(data):
-        required = ["first_name", "surname", "age", "gender", "course", "set_name", "year", "sport", "position"]
-        if any(not str(data.get(key, "")).strip() for key in required):
+    def _validate_profile(data, current_course=None):
+        data = data or {}
+        if any(not str(data.get(key, "")).strip() for key in PROFILE_FIELDS):
             raise ValueError("Please complete all fields.")
         try:
             age = int(data["age"])
@@ -310,11 +352,36 @@ class CKCMSportsSystem:
             raise ValueError("Age must be a number.")
         if age < 10 or age > 99:
             raise ValueError("Age must be between 10 and 99.")
+        course = str(data["course"]).strip()
+        if course not in COURSE_CODES and course != current_course:
+            raise ValueError("Select a course from the list.")
         if data["gender"] not in {"Male", "Female"}:
             raise ValueError("Select Male or Female.")
-        if data["sport"] not in SPORTS:
+        if data["year"] not in YEAR_LEVELS:
+            raise ValueError("Select a valid year.")
+        return {
+            "first_name": str(data["first_name"]).strip(),
+            "surname": str(data["surname"]).strip(),
+            "age": age,
+            "gender": data["gender"],
+            "course": course,
+            "set_name": str(data["set_name"]).strip(),
+            "year": data["year"],
+        }
+
+    @staticmethod
+    def _validate_player_fields(sport, position, height):
+        if not str(sport or "").strip() or not str(position or "").strip() or not str(height or "").strip():
+            raise ValueError("Please complete all fields.")
+        try:
+            height = int(height)
+        except (TypeError, ValueError):
+            raise ValueError("Height must be a whole number in centimetres.")
+        if height < HEIGHT_MIN_CM or height > HEIGHT_MAX_CM:
+            raise ValueError(f"Height must be between {HEIGHT_MIN_CM} and {HEIGHT_MAX_CM} cm.")
+        if sport not in SPORTS:
             raise ValueError("Select a valid sport.")
-        if data["position"] not in SPORTS[data["sport"]]["positions"]:
+        if position not in SPORTS[sport]["positions"]:
             raise ValueError("Select a valid position.")
 
 
@@ -371,6 +438,7 @@ def inject_globals():
     return {
         "current_user": user,
         "sports": SPORTS,
+        "courses": COURSES,
         "system_deadline": system.last_submission_date,
         "my_players": system.players_for_owner(user.id) if user else [],
         "my_player_ids": {p.id for p in system.players_for_owner(user.id)} if user else set(),
@@ -386,6 +454,10 @@ def index():
     return render_template("index.html")
 
 
+def _profile_from_form():
+    return {key: request.form.get(key, "") for key in PROFILE_FIELDS}
+
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if current_user():
@@ -394,13 +466,13 @@ def register():
         try:
             if request.form.get("password", "") != request.form.get("confirm_password", ""):
                 raise ValueError("Passwords do not match.")
-            user = system.add_user(request.form.get("username", ""), request.form.get("password", ""))
+            user = system.add_user(request.form.get("username", ""), request.form.get("password", ""), profile=_profile_from_form())
             session["user_id"] = user.id
             flash(f"Welcome to CKCM, {user.username}! Your account is ready.", "success")
             return redirect(url_for("admin_dashboard" if is_admin_user(user) else "student_home"))
         except ValueError as exc:
             flash(str(exc), "error")
-    return render_template("register.html")
+    return render_template("register.html", form=request.form)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -431,6 +503,24 @@ def student_home():
     if is_admin_user(current_user()):
         return redirect(url_for("admin_dashboard"))
     return render_template("student.html")
+
+
+@app.route("/account/details", methods=["GET", "POST"])
+@login_required
+def account_details():
+    """Edit the personal details saved on the account (name, age, course, ...)."""
+    user = current_user()
+    nxt = request.values.get("next", "")
+    if not nxt.startswith("/") or nxt.startswith("//"):
+        nxt = ""
+    if request.method == "POST":
+        try:
+            system.set_profile(user.id, _profile_from_form(), current_course=(user.profile or {}).get("course"))
+            flash("Your details were saved.", "success")
+            return redirect(nxt or url_for("admin_dashboard" if is_admin_user(user) else "student_home"))
+        except ValueError as exc:
+            flash(str(exc), "error")
+    return render_template("account_details.html", form=request.form if request.method == "POST" else (user.profile or {}), next=nxt)
 
 
 @app.route("/profile")
@@ -531,29 +621,24 @@ def new_player(sport):
     if existing:
         flash(f"You are already registered in {SPORTS[sport]['name']}. You can edit your details here.", "info")
         return redirect(url_for("edit_player", player_id=existing.id))
-    # Reuse personal details from an existing registration so the form is quick to fill.
-    template_player = system.player_for_owner(user.id)
+    if not user.profile:
+        flash("Please complete your account details before joining a sport.", "info")
+        return redirect(url_for("account_details", next=request.path))
     if request.method == "POST":
         try:
             if date.today() > system.last_submission_date:
                 raise ValueError("The submission date has passed.")
             player = system.add_player(
-                first_name=request.form.get("first_name", ""),
-                surname=request.form.get("surname", ""),
-                age=request.form.get("age", ""),
-                gender=request.form.get("gender", ""),
-                course=request.form.get("course", ""),
-                set_name=request.form.get("set_name", ""),
-                year=request.form.get("year", ""),
+                owner_id=user.id,
                 sport=sport,
                 position=request.form.get("position", ""),
-                owner_id=user.id,
+                height=request.form.get("height", ""),
             )
             flash(f"Profile submitted! You're now on the {SPORTS[player.sport]['name']} roster.", "success")
             return redirect(url_for("sport_roster", sport=player.sport))
         except ValueError as exc:
             flash(str(exc), "error")
-    return render_template("player_form.html", player=None, prefill=template_player, title="Player profile", sport=sport, info=SPORTS[sport])
+    return render_template("player_form.html", title="Player profile", sport=sport, info=SPORTS[sport])
 
 
 @app.route("/player/me/edit", methods=["GET", "POST"])
@@ -577,18 +662,15 @@ def edit_player(player_id):
         abort(403)
     if request.method == "POST":
         try:
+            staff = is_admin_user(user) or coach
             system.update_player(
                 player_id,
-                first_name=request.form.get("first_name", ""),
-                surname=request.form.get("surname", ""),
-                age=request.form.get("age", ""),
-                gender=request.form.get("gender", ""),
-                course=request.form.get("course", ""),
-                set_name=request.form.get("set_name", ""),
-                year=request.form.get("year", ""),
-                # Coaches can change a position but never the sport.
-                sport=player.sport if coach else request.form.get("sport", ""),
                 position=request.form.get("position", ""),
+                height=request.form.get("height", ""),
+                # Only admins can move a player to another sport.
+                sport=request.form.get("sport") if is_admin_user(user) else None,
+                # Only staff can edit a player's personal details here; players use "My details".
+                profile=_profile_from_form() if staff else None,
             )
             flash("Player profile saved successfully.", "success")
             destination = url_for("admin_players") if (is_admin_user(user) or coach) else url_for("student_home")
@@ -714,7 +796,7 @@ def admin_players():
     return render_template("admin_players.html", players=players)
 
 
-REPORT_COLUMNS = ["No.", "First Name", "Surname", "Age", "Course / Year", "Set", "Position", "Owner Username"]
+REPORT_COLUMNS = ["No.", "First Name", "Surname", "Age", "Height (cm)", "Course / Year", "Set", "Position", "Owner Username"]
 
 
 def _report_groups():
@@ -736,7 +818,7 @@ def _report_groups():
 
 def _report_row(index, p):
     owner = system.get_user(p.owner_id)
-    return [index, p.first_name, p.surname, p.age, f"{p.course} - {p.year}", p.set_name, p.position,
+    return [index, p.first_name, p.surname, p.age, p.height if p.height else "", f"{p.course} - {p.year}", p.set_name, p.position,
             owner.username if owner else ""]
 
 
@@ -799,7 +881,7 @@ def export_player_report():
                 ws.append([])
             total_f += len(genders["Female"])
             total_m += len(genders["Male"])
-        for col, width in zip("ABCDEFGH", (6, 16, 18, 7, 24, 10, 18, 20)):
+        for col, width in zip("ABCDEFGHI", (6, 16, 18, 7, 12, 24, 10, 18, 20)):
             ws.column_dimensions[col].width = width
         ws.column_dimensions["A"].alignment = Alignment(horizontal="left")
         summary.append([info["name"], total_f, total_m, total_f + total_m])
