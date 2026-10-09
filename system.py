@@ -29,6 +29,11 @@ if os.environ.get("ADMIN_PASSWORD") is None:
         flush=True,
     )
 
+# Second, separate admin account. Credentials are intentionally visible here.
+# The username must start with "admin_" so it is treated as an admin.
+SECOND_ADMIN_USERNAME = "admin_ckcm"
+SECOND_ADMIN_PASSWORD = "CKCM@dmin2026"
+
 SPORTS = {
     "basketball": {
         "name": "Basketball",
@@ -188,6 +193,7 @@ class CKCMSportsSystem:
             os.environ.get("ADMIN_PASSWORD", "admin123"),
             "admin",
         )
+        self.add_user(SECOND_ADMIN_USERNAME, SECOND_ADMIN_PASSWORD, "admin")
 
     def add_user(self, username, password, role="student", profile=None):
         username = (username or "").strip()
@@ -359,7 +365,10 @@ class CKCMSportsSystem:
         user = self.get_user(user_id)
         if not user:
             raise ValueError("User not found.")
-        if user.username.lower() == os.environ.get("ADMIN_USERNAME", "admin_zaide").lower():
+        if user.username.lower() in (
+            os.environ.get("ADMIN_USERNAME", "admin_zaide").lower(),
+            SECOND_ADMIN_USERNAME.lower(),
+        ):
             raise ValueError("The main admin account cannot be deleted.")
         self.users.remove(user)
         self.players[:] = [p for p in self.players if p.owner_id != user_id]
