@@ -45,16 +45,11 @@
   </div>
 </section>
 
-<section class="card dashboard-panel shortcuts-panel">
-  <div class="panel-title"><div><span class="eyebrow">QUICK SHORTCUTS</span><h2>Admin commands</h2></div></div>
-  <div class="shortcut-grid">
-    <a href="{{ url_for('admin_players') }}"><b>Players</b><span>Manage submitted profiles →</span></a>
-    <a href="{{ url_for('admin_sports') }}"><b>Manage sports</b><span>Add sports and edit positions →</span></a>
-    <a href="{{ url_for('admin_deadline') }}"><b>Submission date</b><span>Set the deadline →</span></a>
-    <a href="{{ url_for('admin_announcements') }}"><b>Announcements</b><span>Post and manage notices →</span></a>
-    <a href="{{ url_for('admin_users') }}"><b>User management</b><span>Manage accounts and roles →</span></a>
-    <a href="{{ url_for('export_player_report') }}"><b>Export report</b><span>Excel file, split by sport, department &amp; Female/Male →</span></a>
-    <a href="{{ url_for('export_player_report_csv') }}"><b>Export report (CSV)</b><span>Same split as plain CSV →</span></a>
+<section class="card dashboard-panel">
+  <div class="panel-title"><div><span class="eyebrow">REPORTS</span><h2>Export player report</h2></div></div>
+  <div class="actions">
+    <a class="btn primary" href="{{ url_for('export_player_report') }}">Download Excel</a>
+    <a class="btn secondary" href="{{ url_for('export_player_report_csv') }}">Download CSV</a>
   </div>
 </section>
 
