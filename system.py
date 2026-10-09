@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, abort
+from flask import Flask, render_template, request, redirect, url_for, session, flash, abort, send_from_directory
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date, datetime
@@ -541,6 +541,25 @@ def inject_globals():
         "today": date.today(),
         "system": system,
     }
+
+
+@app.route("/manifest.webmanifest")
+def web_manifest():
+    return send_from_directory(app.static_folder, "manifest.webmanifest", mimetype="application/manifest+json")
+
+
+@app.route("/sw.js")
+def service_worker():
+    # Served from the site root so it can control every page.
+    response = send_from_directory(app.static_folder, "sw.js", mimetype="application/javascript")
+    response.headers["Service-Worker-Allowed"] = "/"
+    response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
+@app.route("/offline")
+def offline():
+    return render_template("message.html", title="You're offline", message="Check your internet connection and try again.")
 
 
 @app.route("/")
