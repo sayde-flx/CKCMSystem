@@ -32,7 +32,7 @@ if os.environ.get("ADMIN_PASSWORD") is None:
 # Second, separate admin account. Credentials are intentionally visible here.
 # The username must start with "admin_" so it is treated as an admin.
 SECOND_ADMIN_USERNAME = "admin_ckcm"
-SECOND_ADMIN_PASSWORD = "CKCM@dmin2026"
+SECOND_ADMIN_PASSWORD = "admin123"
 
 SPORTS = {
     "basketball": {
