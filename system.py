@@ -71,22 +71,13 @@ def parse_positions(raw):
 
 ROLES = ("student", "coach", "admin")
 
-# Courses offered in the player forms: (code, full name).
-# Edit this list to match the programs offered at CKCM. The code is what gets stored.
+# Colleges offered in the player forms. The college name is what gets stored.
 COURSES = [
-    ("BSIT", "BS Information Technology"),
-    ("BSCS", "BS Computer Science"),
-    ("BSIS", "BS Information Systems"),
-    ("BSBA", "BS Business Administration"),
-    ("BSA", "BS Accountancy"),
-    ("BSHM", "BS Hospitality Management"),
-    ("BSTM", "BS Tourism Management"),
-    ("BSN", "BS Nursing"),
-    ("BSED", "BS Secondary Education"),
-    ("BEED", "BS Elementary Education"),
-    ("BSCRIM", "BS Criminology"),
-    ("BSPSY", "BS Psychology"),
-    ("BSCE", "BS Civil Engineering"),
+    ("College of Computer Science", "College of Computer Science"),
+    ("College of Criminology", "College of Criminology"),
+    ("College of Education", "College of Education"),
+    ("College of Art and Sciences", "College of Art and Sciences"),
+    ("College of Business Administration", "College of Business Administration"),
 ]
 COURSE_CODES = {code for code, _ in COURSES}
 YEAR_LEVELS = ("1st Year", "2nd Year", "3rd Year", "4th Year")
@@ -820,9 +811,24 @@ def sport_roster(sport):
     )
 
 
-@app.route("/announcements")
+@app.route("/announcements", methods=["GET", "POST"])
 @login_required
 def announcements():
+    user = current_user()
+    if request.method == "POST":
+        # Only coaches post from this page (admins use /admin/announcements).
+        if not is_coach_user(user):
+            abort(403)
+        try:
+            system.add_announcement(
+                request.form.get("title", ""),
+                request.form.get("message", ""),
+                user.username,
+            )
+            flash("Announcement posted.", "success")
+            return redirect(url_for("announcements"))
+        except ValueError as exc:
+            flash(str(exc), "error")
     return render_template("announcements.html", announcements=system.announcements)
 
 
