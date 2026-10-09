@@ -4,6 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#ea580c">
+  <link rel="manifest" href="{{ url_for('web_manifest') }}">
+  <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="CKCM Sports">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="description" content="CKCM Student Sports List - register, browse, and manage student athletes.">
   <title>{% block title %}CKCM Student Sports List{% endblock %} · CKCM</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -95,6 +102,9 @@
 {% endwith %}
 <main class="page">{% block content %}{% endblock %}</main>
 <style>.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}</style>
+<script>
+  if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+</script>
 <script>
   (function () {
     var burger = document.getElementById('burger');
