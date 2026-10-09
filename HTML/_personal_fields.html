@@ -4,6 +4,6 @@
 <label>Surname<input name="surname" value="{{ form.surname or '' }}" required></label>
 <label>Age<input name="age" type="number" min="10" max="99" value="{{ form.age or '' }}" required></label>
 <label>Gender<select name="gender" required><option value="">Select</option>{% for g in ['Male','Female'] %}<option value="{{ g }}" {% if form.gender == g %}selected{% endif %}>{{ g }}</option>{% endfor %}</select></label>
-<label>Course<select name="course" required><option value="">Select</option>{% for code, cname in courses %}<option value="{{ code }}" {% if cur == code %}selected{% endif %}>{{ code }} &ndash; {{ cname }}</option>{% endfor %}{% if cur and cur not in courses|map(attribute=0)|list %}<option value="{{ cur }}" selected>{{ cur }}</option>{% endif %}</select></label>
+<label>College<select name="course" required><option value="">Select</option>{% for code, cname in courses %}<option value="{{ code }}" {% if cur == code %}selected{% endif %}>{{ cname }}</option>{% endfor %}{% if cur and cur not in courses|map(attribute=0)|list %}<option value="{{ cur }}" selected>{{ cur }}</option>{% endif %}</select></label>
 <label>Set<input name="set_name" value="{{ form.set_name or '' }}" required></label>
 <label>Year<select name="year" required><option value="">Select</option>{% for y in ['1st Year','2nd Year','3rd Year','4th Year'] %}<option value="{{ y }}" {% if form.year == y %}selected{% endif %}>{{ y }}</option>{% endfor %}</select></label>
