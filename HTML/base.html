@@ -38,13 +38,34 @@
 <header class="site-header">
   <nav class="nav" aria-label="Main">
     {% if current_user %}
-    <details class="logo-menu-wrap" id="logo-menu">
-      <summary class="logo-button" aria-label="Open menu">
-        <img src="{{ url_for('static', filename='ckcm-logo.png') }}" alt="CKCM">
-        <span class="burger-badge" aria-hidden="true"><i></i><i></i><i></i></span>
-      </summary>
-      <div class="logo-menu nav-links">
-        <p class="logo-menu-title">Menu</p>
+    <button type="button" class="logo-button" id="burger" aria-label="Open navigation" aria-controls="side-drawer" aria-expanded="false">
+      <img src="{{ url_for('static', filename='ckcm-logo.png') }}" alt="CKCM">
+      <span class="burger-badge" aria-hidden="true"><i></i><i></i><i></i></span>
+    </button>
+    <a class="brand" href="{{ url_for('admin_dashboard') if is_admin else url_for('student_home') }}">
+      <div><strong>CKCM</strong><span>Student Sports List</span></div>
+    </a>
+    {% else %}
+    <a class="brand" href="{{ url_for('index') }}">
+      <span class="logo-button logo-static"><img src="{{ url_for('static', filename='ckcm-logo.png') }}" alt=""></span>
+      <div><strong>CKCM</strong><span>Student Sports List</span></div>
+    </a>
+    <div class="nav-links guest-links">
+      <a class="{{ 'active' if ep == 'login' }}" href="{{ url_for('login') }}">Log in</a>
+      <a class="{{ 'active' if ep == 'register' }}" href="{{ url_for('register') }}">Sign up</a>
+    </div>
+    {% endif %}
+  </nav>
+</header>
+{% if current_user %}
+<div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+<aside class="side-drawer" id="side-drawer" aria-label="Navigation" aria-hidden="true">
+  <div class="drawer-head">
+    <img src="{{ url_for('static', filename='ckcm-logo.png') }}" alt="">
+    <div><strong>CKCM</strong><span>Student Sports List</span></div>
+    <button type="button" class="drawer-close" id="drawer-close" aria-label="Close navigation">&times;</button>
+  </div>
+  <div class="nav-links drawer-links">
       {% if is_admin %}
         <a class="{{ 'active' if ep == 'admin_dashboard' }}" href="{{ url_for('admin_dashboard') }}">Home</a>
         <a class="{{ 'active' if ep in ['sports_home','sport_roster'] }}" href="{{ url_for('sports_home') }}">Sports</a>
@@ -65,23 +86,9 @@
       {% endif %}
       <a class="{{ 'active' if ep == 'settings' }}" href="{{ url_for('settings') }}">Settings</a>
       <a class="logout" href="{{ url_for('logout') }}">Log out</a>
-      </div>
-    </details>
-    <a class="brand" href="{{ url_for('admin_dashboard') if is_admin else url_for('student_home') }}">
-      <div><strong>CKCM</strong><span>Student Sports List</span></div>
-    </a>
-    {% else %}
-    <a class="brand" href="{{ url_for('index') }}">
-      <span class="logo-button logo-static"><img src="{{ url_for('static', filename='ckcm-logo.png') }}" alt=""></span>
-      <div><strong>CKCM</strong><span>Student Sports List</span></div>
-    </a>
-    <div class="nav-links guest-links">
-      <a class="{{ 'active' if ep == 'login' }}" href="{{ url_for('login') }}">Log in</a>
-      <a class="{{ 'active' if ep == 'register' }}" href="{{ url_for('register') }}">Sign up</a>
-    </div>
-    {% endif %}
-  </nav>
-</header>
+  </div>
+</aside>
+{% endif %}
 <div class="flash-wrap" id="flash-wrap" role="status" aria-live="polite"></div>
 {% with messages = get_flashed_messages(with_categories=true) %}
 <script type="application/json" id="flash-data">{{ messages|tojson }}</script>
@@ -90,13 +97,22 @@
 <style>.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}</style>
 <script>
   (function () {
-    var menu = document.getElementById('logo-menu');
-    if (menu) {
-      document.addEventListener('click', function (e) {
-        if (menu.open && !menu.contains(e.target)) menu.open = false;
-      });
+    var burger = document.getElementById('burger');
+    var drawer = document.getElementById('side-drawer');
+    var backdrop = document.getElementById('drawer-backdrop');
+    if (burger && drawer) {
+      function setDrawer(open) {
+        document.documentElement.classList.toggle('drawer-open', open);
+        drawer.setAttribute('aria-hidden', open ? 'false' : 'true');
+        burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+        backdrop.hidden = !open;
+      }
+      burger.addEventListener('click', function () { setDrawer(!document.documentElement.classList.contains('drawer-open')); });
+      document.getElementById('drawer-close').addEventListener('click', function () { setDrawer(false); burger.focus(); });
+      backdrop.addEventListener('click', function () { setDrawer(false); });
+      drawer.addEventListener('click', function (e) { if (e.target.closest('a')) setDrawer(false); });
       document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && menu.open) { menu.open = false; menu.querySelector('summary').focus(); }
+        if (e.key === 'Escape' && document.documentElement.classList.contains('drawer-open')) { setDrawer(false); burger.focus(); }
       });
     }
     var P = window.CKCM;
